@@ -644,6 +644,10 @@
         <div class="brand-title">toplarss</div>
         <div class="brand-desc">Görsel Seçici ile Web Sayfalarından RSS 2.0 Üretici</div>
       </div>
+      <div id="backendBadge" style="margin-left: 12px; font-size: 11px; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.08); display: flex; align-items: center; gap: 6px;">
+        <span id="backendDot" style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span>
+        <span id="backendText">Sunucu kontrol ediliyor...</span>
+      </div>
     </div>
     <nav>
       <button id="tabBuilderBtn" class="nav-btn active" onclick="switchTab('builder')">✨ Yeni Feed Oluştur</button>
@@ -658,7 +662,7 @@
       <!-- Step 1: URL input -->
       <div class="card url-bar">
         <div class="url-input-wrap">
-          <input type="url" id="targetUrlInput" placeholder="Hedef Web Sayfası URL'si (ör. https://news.ycombinator.com)" />
+          <input type="url" id="targetUrlInput" placeholder="Hedef Web Sayfası URL'si (ör. https://www.tarimorman.gov.tr/SYGM/HaberArsivi)" />
         </div>
         <label class="checkbox-wrap" title="Dinamik olarak JavaScript ile yüklenen tek sayfa uygulamaları (SPA) için Playwright kullanır">
           <input type="checkbox" id="renderJsCheckbox" />
@@ -669,6 +673,17 @@
         </div>
         <button id="loadPageBtn" class="btn" onclick="loadPageInProxy()">
           🌐 Sayfayı Yükle
+        </button>
+      </div>
+
+      <!-- Quick Preset Templates Bar -->
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: -6px; margin-bottom: 2px; font-size: 13px;">
+        <span style="color: var(--text-muted); font-weight: 500;">⚡ Hızlı Şablonlar:</span>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('sygm')">
+          🏛️ SYGM Haber Arşivi (tarimorman.gov.tr)
+        </button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('hackernews')">
+          📰 Hacker News
         </button>
       </div>
 
@@ -1034,6 +1049,32 @@
       `;
     }
 
+    // Apply preset configurations for common sources
+    function applyPreset(key) {
+      if (key === 'sygm') {
+        document.getElementById('targetUrlInput').value = 'https://www.tarimorman.gov.tr/SYGM/HaberArsivi';
+        document.getElementById('itemSelectorInput').value = '.card';
+        document.getElementById('titleSelectorInput').value = '.card-title a';
+        document.getElementById('linkSelectorInput').value = '.card-title a';
+        document.getElementById('linkAttrInput').value = 'href';
+        document.getElementById('dateSelectorInput').value = '.post_details';
+        document.getElementById('imageSelectorInput').value = 'img.card-img-top';
+        document.getElementById('imageAttrInput').value = 'src';
+        document.getElementById('feedNameInput').value = 'SYGM Haber Arşivi';
+        showToast('🏛️ SYGM Haber Arşivi şablonu uygulandı! "Sayfayı Yükle" veya doğrudan "Canlı Önizleme Al" butonuna basabilirsiniz.', 'success', 5000);
+      } else if (key === 'hackernews') {
+        document.getElementById('targetUrlInput').value = 'https://news.ycombinator.com';
+        document.getElementById('itemSelectorInput').value = 'tr.athing';
+        document.getElementById('titleSelectorInput').value = '.titleline > a';
+        document.getElementById('linkSelectorInput').value = '.titleline > a';
+        document.getElementById('linkAttrInput').value = 'href';
+        document.getElementById('dateSelectorInput').value = '';
+        document.getElementById('imageSelectorInput').value = '';
+        document.getElementById('feedNameInput').value = 'Hacker News';
+        showToast('📰 Hacker News şablonu uygulandı!', 'success', 4000);
+      }
+    }
+
     // Load page into proxy iframe (Supports local Express proxy and GitHub Pages CORS fallback)
     async function loadPageInProxy() {
       var urlInput = document.getElementById('targetUrlInput');
@@ -1071,36 +1112,45 @@
       if (waitSelector) proxyUrl += '&waitSelector=' + encodeURIComponent(waitSelector);
 
       try {
-        var testRes = await fetch(proxyUrl, { method: 'HEAD' });
-        if (testRes.ok || testRes.status === 400) {
-          // Local backend active
-          iframe.src = proxyUrl;
-          iframe.removeAttribute('srcdoc');
-          iframe.onload = function() {
-            btn.disabled = false;
-            btn.innerText = '🌐 Sayfayı Yükle';
-            statusDot.classList.add('active');
-            statusText.innerText = 'Sayfa hazır (Backend): ' + rawUrl;
-            setSelectMode('item');
-          };
+        var res = await fetch(proxyUrl);
+        if (res.ok) {
+          var html = await res.text();
+          iframe.removeAttribute('src');
+          iframe.srcdoc = html;
+          btn.disabled = false;
+          btn.innerText = '🌐 Sayfayı Yükle';
+          statusDot.classList.add('active');
+          statusText.innerText = 'Sayfa hazır (Yerel Sunucu): ' + rawUrl;
+          setSelectMode('item');
+          showToast('Sayfa başarıyla yüklendi! Öğeleri tıklayarak seçebilirsiniz.', 'success');
+          return;
+        } else if (res.status === 400 || res.status === 403 || res.status === 500) {
+          var errHtml = await res.text();
+          btn.disabled = false;
+          btn.innerText = '🌐 Sayfayı Yükle';
+          statusDot.classList.remove('active');
+          statusText.innerText = 'Sayfa yüklenemedi (Sunucu Hatası: HTTP ' + res.status + ')';
+          iframe.removeAttribute('src');
+          iframe.srcdoc = errHtml;
+          showToast('Sunucu hatası: Sayfa yüklenemedi.', 'error');
           return;
         }
       } catch (e) {
-        // Backend not available (GitHub Pages serverless mode)
+        // Backend not available (e.g. running on GitHub Pages serverless mode)
       }
 
       // 2. Serverless mode for GitHub Pages (CORS Gateway + srcdoc injection)
-      statusText.innerText = 'CORS proxy üzerinden çekiliyor...';
+      statusText.innerText = 'CORS vekili üzerinden çekiliyor...';
       try {
         var corsUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
-        var res = await fetch(corsUrl);
-        if (!res.ok) {
+        var corsRes = await fetch(corsUrl);
+        if (!corsRes.ok) {
           // Fallback to secondary CORS proxy
-          res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(rawUrl));
+          corsRes = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(rawUrl));
         }
-        if (!res.ok) throw new Error('Sayfa içeriği CORS vekiliyle alınamadı.');
+        if (!corsRes.ok) throw new Error('Sayfa içeriği CORS vekiliyle alınamadı.');
 
-        var rawHtml = await res.text();
+        var rawHtml = await corsRes.text();
         var parser = new DOMParser();
         var doc = parser.parseFromString(rawHtml, 'text/html');
 
@@ -1133,8 +1183,18 @@
       } catch (err) {
         btn.disabled = false;
         btn.innerText = '🌐 Sayfayı Yükle';
-        statusText.innerText = 'Sayfa yüklenirken hata oluştu.';
-        showToast('Sayfa yüklenemedi: ' + err.message, 'error');
+        statusText.innerText = 'Sayfa yüklenemedi.';
+        var isGov = rawUrl.includes('.gov.tr') || rawUrl.includes('.edu.tr');
+        var helpMsg = isGov
+          ? 'Kurum içi (.gov.tr) siteleri genel bulut CORS vekilleri üzerinden açılamaz. Lütfen sunucuyu kendi bilgisayarınızda (http://localhost:3000) çalıştırın veya "🏛️ SYGM Haber Arşivi" Hızlı Şablon butonuna basın.'
+          : 'Sayfa CORS vekilleri ile alınamadı: ' + err.message;
+        showToast(helpMsg, 'error', 10000);
+        iframe.removeAttribute('src');
+        iframe.srcdoc = '<div style="font-family:sans-serif;padding:24px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">'
+          + '<h3 style="margin-bottom:8px;">⚠️ Sayfa Yüklenemedi</h3>'
+          + '<p>' + escapeHtml(helpMsg) + '</p>'
+          + (isGov ? '<p style="margin-top:14px;font-size:13px;color:#1e293b;">💡 <strong>İpucu:</strong> Sayfayı açmadan da yukarıdaki <strong>"🏛️ SYGM Haber Arşivi"</strong> butonuna basarak seçicileri doldurabilir, ardından sol alttaki <strong>"🔍 Canlı Önizleme Al"</strong> veya <strong>"💾 Feed\'i Kaydet"</strong> butonlarına basabilirsiniz.</p>' : '')
+          + '</div>';
       }
     }
 
@@ -1214,16 +1274,48 @@
         // Backend not available; continue to client-side parsing
       }
 
-      // 2. Client-side preview for GitHub Pages
+      // 2. Client-side preview for GitHub Pages (Pre-built feeds or CORS fallback)
       try {
-        var iframe = document.getElementById('proxyFrame');
         var items = [];
-        var doc = iframe.contentDocument || (iframe.contentWindow ? iframe.contentWindow.document : null);
-
-        if (!doc) {
-          var raw = await (await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(config.url))).text();
-          doc = new DOMParser().parseFromString(raw, 'text/html');
+        var prebuiltUrl = '';
+        if (config.url.includes('tarimorman.gov.tr/SYGM')) {
+          prebuiltUrl = './feeds/sygm.xml';
+        } else if (config.url.includes('news.ycombinator.com')) {
+          prebuiltUrl = './feeds/hackernews.xml';
         }
+
+        if (prebuiltUrl) {
+          var xmlRes = await fetch(prebuiltUrl);
+          if (xmlRes.ok) {
+            var xmlText = await xmlRes.text();
+            var xmlDoc = new DOMParser().parseFromString(xmlText, 'application/xml');
+            var xmlItems = xmlDoc.querySelectorAll('item');
+            xmlItems.forEach(function(el, idx) {
+              if (idx >= 10) return;
+              var title = el.querySelector('title') ? el.querySelector('title').textContent : 'Başlıksız';
+              var link = el.querySelector('link') ? el.querySelector('link').textContent : '';
+              var desc = el.querySelector('description') ? el.querySelector('description').textContent : '';
+              var enclosure = el.querySelector('enclosure');
+              var img = enclosure ? enclosure.getAttribute('url') : '';
+              var pubDate = el.querySelector('pubDate') ? el.querySelector('pubDate').textContent : '';
+              items.push({ title: title, link: link, description: desc, imageUrl: img, pubDate: pubDate });
+            });
+            if (items.length > 0) {
+              renderPreviewResults(items, xmlItems.length);
+              return;
+            }
+          }
+        }
+
+        // Generic fallback for other URLs
+        var corsUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(config.url);
+        var rawRes = await fetch(corsUrl);
+        if (!rawRes.ok) {
+          rawRes = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(config.url));
+        }
+        if (!rawRes.ok) throw new Error('Önizleme verisi CORS vekilleri üzerinden alınamadı.');
+        var raw = await rawRes.text();
+        var doc = new DOMParser().parseFromString(raw, 'text/html');
 
         var matched = doc.querySelectorAll(config.itemSelector);
         matched.forEach(function(itemEl, idx) {
@@ -1374,15 +1466,34 @@
       var allFeeds = [];
 
       // 1. Try Backend API
+      var backendOk = false;
       try {
         var res = await fetch('/api/feeds');
         if (res.ok) {
           var data = await res.json();
           if (data.success && data.feeds) {
             allFeeds = data.feeds;
+            backendOk = true;
           }
         }
       } catch (e) {}
+
+      var bBadge = document.getElementById('backendBadge');
+      var bDot = document.getElementById('backendDot');
+      var bText = document.getElementById('backendText');
+      if (bBadge && bDot && bText) {
+        if (backendOk) {
+          bBadge.style.background = '#064e3b';
+          bBadge.style.color = '#a7f3d0';
+          bDot.style.background = '#10b981';
+          bText.innerText = 'Yerel Sunucu Aktif (http://localhost:3000)';
+        } else {
+          bBadge.style.background = '#451a03';
+          bBadge.style.color = '#fde68a';
+          bDot.style.background = '#f59e0b';
+          bText.innerText = 'GitHub Pages Demo (İç ağlar için localhost:3000 kullanın)';
+        }
+      }
 
       // 2. Try pre-built feeds manifest from GitHub Actions (feeds/index.json)
       if (allFeeds.length === 0) {

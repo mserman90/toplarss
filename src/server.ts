@@ -27,6 +27,18 @@ export const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// Enable CORS for web clients and local development
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-API-Key');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 // Rate limiting middleware for heavy endpoints
 const heavyLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -169,8 +181,7 @@ app.get('/api/proxy', heavyLimiter, apiKeyAuth, async (req: Request, res: Respon
     const proxiedHtml = await proxyHtmlForPicker(targetUrl, render, waitSelector);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    res.setHeader('Content-Security-Policy', "frame-ancestors 'self';");
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self' http://localhost:* http://127.0.0.1:* https://*.github.io;");
     res.send(proxiedHtml);
   } catch (err: any) {
     res.status(400).send(`
