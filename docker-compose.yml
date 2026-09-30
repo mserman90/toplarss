@@ -1,0 +1,17 @@
+services:
+  fetchrss-clone:
+    build: .
+    container_name: fetchrss-clone
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - PUBLIC_URL=http://localhost:3000
+      - DB_PATH=/app/data/feeds.db
+      - PW_MAX_PAGES=2
+      - PW_NO_SANDBOX=1
+      # Optional: set API_KEY to require x-api-key header
+      # - API_KEY=your_secret_api_key_here
+    volumes:
+      - ./data:/app/data

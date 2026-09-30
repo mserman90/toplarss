@@ -1,0 +1,9 @@
+node_modules/
+dist/
+feeds.db
+feeds.db-journal
+feeds.db-wal
+feeds.db-shm
+data/
+*.log
+.DS_Store
