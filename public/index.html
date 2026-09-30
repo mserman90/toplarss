@@ -936,8 +936,106 @@
       }
     }
 
-    // Load page into proxy iframe
-    function loadPageInProxy() {
+    // Environment Detection
+    var isGitHubPages = window.location.hostname.endsWith('github.io') || (window.location.protocol === 'https:' && !['localhost', '127.0.0.1'].includes(window.location.hostname));
+
+    // Client-side visual picker code for GitHub Pages (srcdoc mode)
+    function getClientPickerInjection() {
+      return `
+        <style>
+          .fetchrss-hovered { outline: 2px dashed #2563eb !important; background-color: rgba(37,99,235,0.08) !important; cursor: crosshair !important; }
+          .fetchrss-selected-item { outline: 2px solid #16a34a !important; background-color: rgba(22,163,74,0.06) !important; }
+          .fetchrss-selected-title { outline: 2px solid #d97706 !important; background-color: rgba(217,119,6,0.12) !important; }
+          .fetchrss-selected-link { outline: 2px solid #9333ea !important; background-color: rgba(147,51,234,0.12) !important; }
+          .fetchrss-selected-desc { outline: 2px solid #0891b2 !important; background-color: rgba(8,145,178,0.12) !important; }
+          .fetchrss-selected-date { outline: 2px solid #dc2626 !important; background-color: rgba(220,38,38,0.12) !important; }
+          .fetchrss-selected-image { outline: 2px solid #ea580c !important; background-color: rgba(234,88,12,0.12) !important; }
+          #fetchrss-floating-badge { position: fixed; bottom: 12px; right: 12px; z-index: 2147483647; background: #1e293b; color: #f8fafc; padding: 8px 14px; border-radius: 8px; font-family: sans-serif; font-size: 13px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #475569; pointer-events: none; }
+        </style>
+        <div id="fetchrss-floating-badge">Seçici Hazır: Liste Öğesini Tıklayın</div>
+        <script>
+        (function() {
+          var activeMode = 'item';
+          var hoveredEl = null;
+          var currentItemEl = null;
+          var badge = document.getElementById('fetchrss-floating-badge');
+          function updateBadge(t) { if(badge) badge.innerText = t; }
+
+          function getSelector(el, root) {
+            if (!el || el === document.body || el === document.documentElement) return '';
+            if (root && el === root) return '';
+            var tag = el.tagName.toLowerCase();
+            var classes = Array.from(el.classList).filter(function(c) { return !c.startsWith('fetchrss-'); });
+            if (root) {
+              if (classes.length > 0) {
+                var clsSel = tag + '.' + classes.slice(0, 2).map(CSS.escape).join('.');
+                if (root.querySelectorAll(clsSel).length === 1) return clsSel;
+              }
+              if (root.querySelectorAll(tag).length === 1) return tag;
+              var path = [], curr = el;
+              while (curr && curr !== root && curr !== document.body) {
+                var cTag = curr.tagName.toLowerCase();
+                var cCls = Array.from(curr.classList).filter(function(c) { return !c.startsWith('fetchrss-'); });
+                if (cCls.length > 0) cTag += '.' + cCls.slice(0, 1).map(CSS.escape).join('.');
+                path.unshift(cTag);
+                curr = curr.parentElement;
+              }
+              return path.join(' > ');
+            }
+            if (classes.length > 0) {
+              var cls = '.' + classes.map(CSS.escape).join('.');
+              if (document.querySelectorAll(cls).length >= 2) return cls;
+            }
+            return classes.length > 0 ? tag + '.' + CSS.escape(classes[0]) : tag;
+          }
+
+          document.addEventListener('mouseover', function(e) {
+            if (hoveredEl) hoveredEl.classList.remove('fetchrss-hovered');
+            if (!e.target || e.target === document.body || e.target.id === 'fetchrss-floating-badge') return;
+            hoveredEl = e.target;
+            hoveredEl.classList.add('fetchrss-hovered');
+          }, true);
+
+          document.addEventListener('mouseout', function(e) {
+            if (hoveredEl) { hoveredEl.classList.remove('fetchrss-hovered'); hoveredEl = null; }
+          }, true);
+
+          document.addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            var target = e.target;
+            if (!target || target === document.body || target.id === 'fetchrss-floating-badge') return;
+
+            if (activeMode === 'item') {
+              currentItemEl = target;
+              var sel = getSelector(target);
+              document.querySelectorAll('.fetchrss-selected-item').forEach(function(el){ el.classList.remove('fetchrss-selected-item'); });
+              try { document.querySelectorAll(sel).forEach(function(el){ el.classList.add('fetchrss-selected-item'); }); } catch(err){}
+              window.parent.postMessage({ type: 'FETCHRSS_SELECT', mode: 'item', selector: sel, relativeSelector: '', tagName: target.tagName.toLowerCase(), matchedCount: document.querySelectorAll(sel).length }, '*');
+              updateBadge('Öğe Seçildi (' + sel + '). Şimdi Başlık veya Link seçin.');
+            } else {
+              var container = currentItemEl;
+              var relSel = getSelector(target, container);
+              var absSel = getSelector(target);
+              var clsMap = { title: 'fetchrss-selected-title', link: 'fetchrss-selected-link', description: 'fetchrss-selected-desc', date: 'fetchrss-selected-date', image: 'fetchrss-selected-image' };
+              var cls = clsMap[activeMode] || 'fetchrss-selected-title';
+              document.querySelectorAll('.' + cls).forEach(function(el){ el.classList.remove(cls); });
+              target.classList.add(cls);
+              window.parent.postMessage({ type: 'FETCHRSS_SELECT', mode: activeMode, selector: absSel, relativeSelector: relSel || absSel, tagName: target.tagName.toLowerCase(), textPreview: target.innerText ? target.innerText.trim().slice(0, 100) : '' }, '*');
+              updateBadge(activeMode.toUpperCase() + ' seçildi: ' + (relSel || absSel));
+            }
+          }, true);
+
+          window.addEventListener('message', function(ev) {
+            if (!ev.data) return;
+            if (ev.data.type === 'SET_MODE') activeMode = ev.data.mode || 'item';
+          });
+        })();
+        <\/script>
+      `;
+    }
+
+    // Load page into proxy iframe (Supports local Express proxy and GitHub Pages CORS fallback)
+    async function loadPageInProxy() {
       var urlInput = document.getElementById('targetUrlInput');
       var rawUrl = urlInput.value.trim();
       if (!rawUrl) {
@@ -953,10 +1051,6 @@
       var render = document.getElementById('renderJsCheckbox').checked;
       var waitSelector = document.getElementById('waitSelectorInput').value.trim();
 
-      var proxyUrl = '/api/proxy?url=' + encodeURIComponent(rawUrl);
-      if (render) proxyUrl += '&render=1';
-      if (waitSelector) proxyUrl += '&waitSelector=' + encodeURIComponent(waitSelector);
-
       var btn = document.getElementById('loadPageBtn');
       btn.disabled = true;
       btn.innerText = 'Yükleniyor...';
@@ -968,25 +1062,80 @@
 
       var iframe = document.getElementById('proxyFrame');
       var emptyState = document.getElementById('iframeEmptyState');
-
-      iframe.src = proxyUrl;
       iframe.style.display = 'block';
       emptyState.style.display = 'none';
 
-      iframe.onload = function() {
+      // 1. Try local Express backend first
+      var proxyUrl = '/api/proxy?url=' + encodeURIComponent(rawUrl);
+      if (render) proxyUrl += '&render=1';
+      if (waitSelector) proxyUrl += '&waitSelector=' + encodeURIComponent(waitSelector);
+
+      try {
+        var testRes = await fetch(proxyUrl, { method: 'HEAD' });
+        if (testRes.ok || testRes.status === 400) {
+          // Local backend active
+          iframe.src = proxyUrl;
+          iframe.removeAttribute('srcdoc');
+          iframe.onload = function() {
+            btn.disabled = false;
+            btn.innerText = '🌐 Sayfayı Yükle';
+            statusDot.classList.add('active');
+            statusText.innerText = 'Sayfa hazır (Backend): ' + rawUrl;
+            setSelectMode('item');
+          };
+          return;
+        }
+      } catch (e) {
+        // Backend not available (GitHub Pages serverless mode)
+      }
+
+      // 2. Serverless mode for GitHub Pages (CORS Gateway + srcdoc injection)
+      statusText.innerText = 'CORS proxy üzerinden çekiliyor...';
+      try {
+        var corsUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
+        var res = await fetch(corsUrl);
+        if (!res.ok) {
+          // Fallback to secondary CORS proxy
+          res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(rawUrl));
+        }
+        if (!res.ok) throw new Error('Sayfa içeriği CORS vekiliyle alınamadı.');
+
+        var rawHtml = await res.text();
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(rawHtml, 'text/html');
+
+        // Security sanitization: strip scripts and embedded iframes
+        doc.querySelectorAll('script, iframe, object, embed, noscript').forEach(function(el) { el.remove(); });
+
+        // Add base href
+        var base = doc.createElement('base');
+        base.href = rawUrl;
+        if (doc.head) {
+          doc.head.insertBefore(base, doc.head.firstChild);
+        } else {
+          doc.documentElement.insertBefore(base, doc.documentElement.firstChild);
+        }
+
+        // Inject picker
+        var injWrapper = doc.createElement('div');
+        injWrapper.innerHTML = getClientPickerInjection();
+        doc.body.appendChild(injWrapper);
+
+        iframe.removeAttribute('src');
+        iframe.srcdoc = doc.documentElement.outerHTML;
+
         btn.disabled = false;
         btn.innerText = '🌐 Sayfayı Yükle';
         statusDot.classList.add('active');
-        statusText.innerText = 'Sayfa hazır: ' + rawUrl;
+        statusText.innerText = 'Sayfa hazır (GitHub Pages Modu): ' + rawUrl;
         setSelectMode('item');
-      };
-
-      iframe.onerror = function() {
+        showToast('Sayfa başarıyla yüklendi! Öğeleri tıklayarak seçebilirsiniz.', 'success');
+      } catch (err) {
         btn.disabled = false;
         btn.innerText = '🌐 Sayfayı Yükle';
         statusText.innerText = 'Sayfa yüklenirken hata oluştu.';
-        showToast('Sayfa yüklenemedi. Adresi ve erişilebilirliğini kontrol edin.', 'error');
-      };
+        showToast('Sayfa yüklenemedi: ' + err.message, 'error');
+      }
     }
 
     // Listen for postMessage from the injected picker inside the iframe
@@ -997,7 +1146,6 @@
       if (data.mode === 'item') {
         document.getElementById('itemSelectorInput').value = data.selector;
         showToast('Liste öğesi seçildi: ' + data.selector + ' (' + (data.matchedCount || 1) + ' öğe eşleşti)', 'success');
-        // Automatically switch to title selection
         setSelectMode('title');
       } else if (data.mode === 'title') {
         document.getElementById('titleSelectorInput').value = data.relativeSelector || data.selector;
@@ -1023,96 +1171,122 @@
 
     // Read current form configuration
     function getCurrentConfig() {
-      var url = document.getElementById('targetUrlInput').value.trim();
-      var render = document.getElementById('renderJsCheckbox').checked;
-      var waitSelector = document.getElementById('waitSelectorInput').value.trim();
-      var itemSelector = document.getElementById('itemSelectorInput').value.trim();
-      var titleSelector = document.getElementById('titleSelectorInput').value.trim();
-      var linkSelector = document.getElementById('linkSelectorInput').value.trim();
-      var linkAttr = document.getElementById('linkAttrInput').value.trim() || 'href';
-      var descriptionSelector = document.getElementById('descriptionSelectorInput').value.trim();
-      var dateSelector = document.getElementById('dateSelectorInput').value.trim();
-      var imageSelector = document.getElementById('imageSelectorInput').value.trim();
-      var imageAttr = document.getElementById('imageAttrInput').value.trim() || 'src';
-
       return {
-        url: url,
-        render: render,
-        waitSelector: waitSelector || undefined,
-        itemSelector: itemSelector,
-        titleSelector: titleSelector,
-        linkSelector: linkSelector,
-        linkAttr: linkAttr,
-        descriptionSelector: descriptionSelector || undefined,
-        dateSelector: dateSelector || undefined,
-        imageSelector: imageSelector || undefined,
-        imageAttr: imageAttr
+        url: document.getElementById('targetUrlInput').value.trim(),
+        render: document.getElementById('renderJsCheckbox').checked,
+        waitSelector: document.getElementById('waitSelectorInput').value.trim() || undefined,
+        itemSelector: document.getElementById('itemSelectorInput').value.trim(),
+        titleSelector: document.getElementById('titleSelectorInput').value.trim(),
+        linkSelector: document.getElementById('linkSelectorInput').value.trim(),
+        linkAttr: document.getElementById('linkAttrInput').value.trim() || 'href',
+        descriptionSelector: document.getElementById('descriptionSelectorInput').value.trim() || undefined,
+        dateSelector: document.getElementById('dateSelectorInput').value.trim() || undefined,
+        imageSelector: document.getElementById('imageSelectorInput').value.trim() || undefined,
+        imageAttr: document.getElementById('imageAttrInput').value.trim() || 'src'
       };
     }
 
-    // Fetch and display preview
+    // Fetch and display preview (supports both Backend and Client-side DOM parsing)
     async function fetchPreview() {
       var config = getCurrentConfig();
-      if (!config.url) {
-        showToast('Lütfen önce bir hedef URL girin.', 'error');
-        return;
-      }
-      if (!config.itemSelector) {
-        showToast('Lütfen Liste Öğesi seçicisini (itemSelector) belirleyin.', 'error');
+      if (!config.url || !config.itemSelector) {
+        showToast('Lütfen URL ve Liste Öğesi seçicisini girin.', 'error');
         return;
       }
 
       showToast('Önizleme verileri çıkarılıyor...', 'info');
 
+      // 1. Try backend POST /api/preview
       try {
         var res = await fetch('/api/preview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(config)
         });
-
-        var data = await res.json();
-        if (!data.success) {
-          throw new Error(data.error || 'Önizleme alınamadı.');
+        if (res.ok) {
+          var data = await res.json();
+          if (data.success) {
+            renderPreviewResults(data.items || [], data.totalMatched || 0);
+            return;
+          }
         }
-
-        var previewCard = document.getElementById('previewCard');
-        var previewGrid = document.getElementById('previewGrid');
-        var previewCount = document.getElementById('previewCount');
-
-        previewCount.innerText = data.totalMatched || 0;
-        previewGrid.innerHTML = '';
-
-        if (!data.items || data.items.length === 0) {
-          previewGrid.innerHTML = '<p style="color:var(--text-muted); grid-column: 1/-1;">Belirtilen seçicilerle eşleşen öğe bulunamadı. Seçicileri gözden geçirin.</p>';
-        } else {
-          data.items.forEach(function(item) {
-            var card = document.createElement('div');
-            card.className = 'preview-card';
-
-            var imgHtml = item.imageUrl ? '<img src="' + item.imageUrl + '" class="preview-card-img" alt="Görsel" onerror="this.style.display=\'none\'" />' : '';
-            var descHtml = item.description ? '<div class="preview-card-desc">' + escapeHtml(item.description) + '</div>' : '';
-            var dateStr = item.pubDate ? new Date(item.pubDate).toLocaleString('tr-TR') : 'Tarih yok';
-
-            card.innerHTML = `
-              ${imgHtml}
-              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="preview-card-title">${escapeHtml(item.title || 'Başlıksız')}</a>
-              ${descHtml}
-              <div class="preview-card-meta">
-                <span>${dateStr}</span>
-                <span>${item.link ? '🔗 Bağlantı Var' : ''}</span>
-              </div>
-            `;
-            previewGrid.appendChild(card);
-          });
-        }
-
-        previewCard.style.display = 'flex';
-        previewCard.scrollIntoView({ behavior: 'smooth' });
-        showToast('Önizleme başarıyla güncellendi.', 'success');
-      } catch (err) {
-        showToast(err.message, 'error');
+      } catch (e) {
+        // Backend not available; continue to client-side parsing
       }
+
+      // 2. Client-side preview for GitHub Pages
+      try {
+        var iframe = document.getElementById('proxyFrame');
+        var items = [];
+        var doc = iframe.contentDocument || (iframe.contentWindow ? iframe.contentWindow.document : null);
+
+        if (!doc) {
+          var raw = await (await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(config.url))).text();
+          doc = new DOMParser().parseFromString(raw, 'text/html');
+        }
+
+        var matched = doc.querySelectorAll(config.itemSelector);
+        matched.forEach(function(itemEl, idx) {
+          if (idx >= 10) return;
+          var titleEl = config.titleSelector ? itemEl.querySelector(config.titleSelector) : null;
+          var title = titleEl ? titleEl.innerText.trim() : (itemEl.innerText ? itemEl.innerText.trim().slice(0, 60) : 'Başlıksız');
+
+          var linkEl = config.linkSelector ? itemEl.querySelector(config.linkSelector) : itemEl.querySelector('a');
+          var rawHref = linkEl ? linkEl.getAttribute(config.linkAttr || 'href') : '';
+          var fullLink = rawHref;
+          try { fullLink = new URL(rawHref, config.url).href; } catch(err){}
+
+          var descEl = config.descriptionSelector ? itemEl.querySelector(config.descriptionSelector) : null;
+          var desc = descEl ? descEl.innerText.trim() : '';
+
+          var imgEl = config.imageSelector ? itemEl.querySelector(config.imageSelector) : itemEl.querySelector('img');
+          var rawImg = imgEl ? imgEl.getAttribute(config.imageAttr || 'src') : '';
+          var fullImg = rawImg;
+          try { if (rawImg) fullImg = new URL(rawImg, config.url).href; } catch(err){}
+
+          items.push({ title: title, link: fullLink || config.url, description: desc, imageUrl: fullImg, pubDate: new Date().toISOString() });
+        });
+
+        renderPreviewResults(items, matched.length);
+      } catch (err) {
+        showToast('Önizleme çıkarılamadı: ' + err.message, 'error');
+      }
+    }
+
+    function renderPreviewResults(items, totalCount) {
+      var previewCard = document.getElementById('previewCard');
+      var previewGrid = document.getElementById('previewGrid');
+      var previewCount = document.getElementById('previewCount');
+
+      previewCount.innerText = totalCount;
+      previewGrid.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        previewGrid.innerHTML = '<p style="color:var(--text-muted); grid-column: 1/-1;">Belirtilen seçicilerle eşleşen öğe bulunamadı. Seçicileri gözden geçirin.</p>';
+      } else {
+        items.forEach(function(item) {
+          var card = document.createElement('div');
+          card.className = 'preview-card';
+          var imgHtml = item.imageUrl ? '<img src="' + item.imageUrl + '" class="preview-card-img" alt="Görsel" onerror="this.style.display=\'none\'" />' : '';
+          var descHtml = item.description ? '<div class="preview-card-desc">' + escapeHtml(item.description) + '</div>' : '';
+          var dateStr = item.pubDate ? new Date(item.pubDate).toLocaleString('tr-TR') : 'Bugün';
+
+          card.innerHTML = `
+            ${imgHtml}
+            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="preview-card-title">${escapeHtml(item.title || 'Başlıksız')}</a>
+            ${descHtml}
+            <div class="preview-card-meta">
+              <span>${dateStr}</span>
+              <span>🔗 Bağlantı Var</span>
+            </div>
+          `;
+          previewGrid.appendChild(card);
+        });
+      }
+
+      previewCard.style.display = 'flex';
+      previewCard.scrollIntoView({ behavior: 'smooth' });
+      showToast('Önizleme başarıyla güncellendi.', 'success');
     }
 
     // Modal Operations
@@ -1153,175 +1327,159 @@
       saveBtn.disabled = true;
       saveBtn.innerText = 'Kaydediliyor...';
 
+      // 1. Try Backend API
       try {
         var res;
         if (editingId) {
-          // Update existing
-          res = await fetch('/api/feeds/' + editingId, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name, intervalMins: intervalMins, config: config })
-          });
+          res = await fetch('/api/feeds/' + editingId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, intervalMins: intervalMins, config: config }) });
         } else {
-          // Create new
-          res = await fetch('/api/feeds', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name, intervalMins: intervalMins, config: config })
-          });
+          res = await fetch('/api/feeds', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, intervalMins: intervalMins, config: config }) });
         }
-
-        var data = await res.json();
-        if (!data.success) {
-          throw new Error(data.error || 'Kaydetme işlemi başarısız.');
+        if (res.ok) {
+          var data = await res.json();
+          if (data.success) {
+            showToast('Feed başarıyla kaydedildi!', 'success');
+            closeSaveModal();
+            switchTab('feeds');
+            return;
+          }
         }
-
-        showToast('Feed başarıyla kaydedildi ve RSS üretildi!', 'success');
-        closeSaveModal();
-        switchTab('feeds');
-      } catch (err) {
-        showToast(err.message, 'error');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerText = 'Kaydet ve RSS Üret';
+      } catch (e) {
+        // Backend not available (GitHub Pages mode)
       }
+
+      // 2. Client-side local storage for GitHub Pages
+      var localFeeds = JSON.parse(localStorage.getItem('toplarss_local_feeds') || '[]');
+      var newFeedId = editingId || ('feed_' + Date.now().toString(36));
+
+      if (editingId) {
+        localFeeds = localFeeds.map(function(f) {
+          return f.id === editingId ? { id: editingId, name: name, intervalMins: intervalMins, config: config } : f;
+        });
+      } else {
+        localFeeds.push({ id: newFeedId, name: name, url: config.url, intervalMins: intervalMins, config: config, created_at: new Date().toISOString() });
+      }
+
+      localStorage.setItem('toplarss_local_feeds', JSON.stringify(localFeeds));
+      showToast('Feed tarayıcınıza kaydedildi (GitHub Pages Modu)!', 'success');
+      closeSaveModal();
+      switchTab('feeds');
+      saveBtn.disabled = false;
+      saveBtn.innerText = 'Kaydet ve RSS Üret';
     }
 
-    // Load Feeds Table
+    // Load Feeds Table (Supports Backend feeds, GitHub Pages pre-built feeds, and LocalStorage feeds)
     async function loadFeedsList() {
       var tbody = document.getElementById('feedsTableBody');
+      var allFeeds = [];
+
+      // 1. Try Backend API
       try {
         var res = await fetch('/api/feeds');
-        var data = await res.json();
-        if (!data.success) {
-          throw new Error(data.error || 'Liste alınamadı.');
-        }
-
-        feedsCache = data.feeds || [];
-        document.getElementById('feedCountBadge').innerText = feedsCache.length;
-
-        if (feedsCache.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                Henüz kayıtlı bir RSS beslemesi bulunmuyor. Yeni bir tane oluşturmak için yukarıdan "Yeni Feed Oluştur" sekmesine geçin.
-              </td>
-            </tr>
-          `;
-          return;
-        }
-
-        tbody.innerHTML = '';
-        feedsCache.forEach(function(feed) {
-          var tr = document.createElement('tr');
-
-          var statusBadge = '';
-          if (feed.last_error) {
-            statusBadge = '<span class="badge badge-error" title="' + escapeHtml(feed.last_error) + '">⚠️ Hata</span>';
-          } else if (feed.cached_xml) {
-            statusBadge = '<span class="badge badge-success">✓ Aktif</span>';
-          } else {
-            statusBadge = '<span class="badge" style="background:#475569; color:white;">Hazırlanıyor</span>';
+        if (res.ok) {
+          var data = await res.json();
+          if (data.success && data.feeds) {
+            allFeeds = data.feeds;
           }
-
-          var lastScrapedStr = feed.last_scraped_at ? new Date(feed.last_scraped_at).toLocaleString('tr-TR') : 'Henüz çalışmadı';
-
-          tr.innerHTML = `
-            <td><strong>${escapeHtml(feed.name)}</strong></td>
-            <td>
-              <a href="${feed.url}" target="_blank" rel="noopener noreferrer" style="color:#93c5fd; text-decoration:none; font-size:12px;">
-                ${escapeHtml(feed.url.slice(0, 30))}${feed.url.length > 30 ? '...' : ''} ↗
-              </a>
-            </td>
-            <td>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <input type="text" readonly value="${feed.feedUrl}" style="font-size:11px; padding:4px 8px; width:220px;" onclick="this.select()" />
-                <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${feed.feedUrl}')" title="Kopyala">📋</button>
-              </div>
-            </td>
-            <td>${feed.interval_mins} dk</td>
-            <td style="font-size:12px; color:var(--text-muted);">${lastScrapedStr}</td>
-            <td>${statusBadge}</td>
-            <td>
-              <div style="display:flex; gap:6px;">
-                <button class="btn btn-secondary btn-sm" onclick="triggerRefresh('${feed.id}')" title="Şimdi Yenile">🔄</button>
-                <button class="btn btn-secondary btn-sm" onclick="editFeed('${feed.id}')" title="Yapılandırmayı Düzenle">✏️</button>
-                <a href="${feed.feedUrl}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;" title="RSS XML Görüntüle">📄</a>
-                <button class="btn btn-danger btn-sm" onclick="deleteFeedItem('${feed.id}')" title="Sil">🗑️</button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" style="color:#f87171; text-align:center;">Hata: ${escapeHtml(err.message)}</td></tr>`;
-      }
-    }
-
-    // Trigger immediate feed refresh
-    async function triggerRefresh(id) {
-      showToast('Feed yenileniyor...', 'info');
-      try {
-        var res = await fetch('/api/feeds/' + id + '/refresh', { method: 'POST' });
-        var data = await res.json();
-        if (!data.success) {
-          throw new Error(data.error || 'Yenileme başarısız.');
         }
-        showToast('Feed başarıyla yenilendi (' + (data.itemCount || 0) + ' öğe bulundu).', 'success');
-        loadFeedsList();
-      } catch (err) {
-        showToast(err.message, 'error');
-        loadFeedsList();
-      }
-    }
+      } catch (e) {}
 
-    // Delete feed
-    async function deleteFeedItem(id) {
-      if (!confirm('Bu RSS beslemesini silmek istediğinizden emin misiniz?')) {
+      // 2. Try pre-built feeds manifest from GitHub Actions (feeds/index.json)
+      if (allFeeds.length === 0) {
+        try {
+          var ghRes = await fetch('./feeds/index.json');
+          if (ghRes.ok) {
+            var ghFeeds = await ghRes.json();
+            ghFeeds.forEach(function(gf) {
+              allFeeds.push({
+                id: gf.id,
+                name: gf.name,
+                url: gf.url,
+                feedUrl: gf.xmlUrl || (window.location.origin + window.location.pathname.replace(/\/$/, '') + '/feeds/' + gf.id + '.xml'),
+                interval_mins: 60,
+                last_scraped_at: gf.lastUpdated,
+                cached_xml: 'exists',
+                config: {}
+              });
+            });
+          }
+        } catch (e) {}
+
+        // Add LocalStorage saved feeds
+        var localFeeds = JSON.parse(localStorage.getItem('toplarss_local_feeds') || '[]');
+        localFeeds.forEach(function(lf) {
+          allFeeds.push({
+            id: lf.id,
+            name: lf.name + ' (Tarayıcı Deposu)',
+            url: lf.url || (lf.config ? lf.config.url : ''),
+            feedUrl: 'https://mserman90.github.io/toplarss/feeds/' + lf.id + '.xml',
+            interval_mins: lf.intervalMins || 60,
+            last_scraped_at: 'Tarayıcıda kayıtlı',
+            cached_xml: 'local',
+            config: lf.config || {}
+          });
+        });
+      }
+
+      feedsCache = allFeeds;
+      document.getElementById('feedCountBadge').innerText = allFeeds.length;
+
+      if (allFeeds.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
+              Henüz kayıtlı bir RSS beslemesi bulunmuyor. Yeni bir tane oluşturmak için "Yeni Feed Oluştur" sekmesine geçin.
+            </td>
+          </tr>
+        `;
         return;
       }
-      try {
-        var res = await fetch('/api/feeds/' + id, { method: 'DELETE' });
-        var data = await res.json();
-        if (!data.success) {
-          throw new Error(data.error || 'Silme işlemi başarısız.');
+
+      tbody.innerHTML = '';
+      allFeeds.forEach(function(feed) {
+        var tr = document.createElement('tr');
+        var statusBadge = '<span class="badge badge-success">✓ Aktif</span>';
+        if (feed.last_error) {
+          statusBadge = '<span class="badge badge-error" title="' + escapeHtml(feed.last_error) + '">⚠️ Hata</span>';
         }
-        showToast('Feed silindi.', 'success');
-        loadFeedsList();
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
+
+        var xmlUrl = feed.feedUrl || ('/feed/' + feed.id + '.xml');
+        var lastScrapedStr = feed.last_scraped_at ? (feed.last_scraped_at.includes('T') ? new Date(feed.last_scraped_at).toLocaleString('tr-TR') : feed.last_scraped_at) : 'Henüz çalışmadı';
+
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(feed.name)}</strong></td>
+          <td>
+            <a href="${feed.url}" target="_blank" rel="noopener noreferrer" style="color:#93c5fd; text-decoration:none; font-size:12px;">
+              ${escapeHtml(feed.url.slice(0, 30))}${feed.url.length > 30 ? '...' : ''} ↗
+            </a>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="text" readonly value="${xmlUrl}" style="font-size:11px; padding:4px 8px; width:220px;" onclick="this.select()" />
+              <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${xmlUrl}')" title="Kopyala">📋</button>
+            </div>
+          </td>
+          <td>${feed.interval_mins} dk</td>
+          <td style="font-size:12px; color:var(--text-muted);">${lastScrapedStr}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <a href="${xmlUrl}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;" title="RSS XML Görüntüle">📄 XML</a>
+              <button class="btn btn-secondary btn-sm" onclick="editFeed('${feed.id}')" title="Düzenle">✏️</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
-    // Edit feed: loads into builder
-    function editFeed(id) {
-      var feed = feedsCache.find(function(f) { return f.id === id; });
-      if (!feed) return;
-
-      var config = feed.config;
-      document.getElementById('targetUrlInput').value = config.url || feed.url;
-      document.getElementById('renderJsCheckbox').checked = Boolean(config.render);
-      document.getElementById('waitSelectorWrap').style.display = config.render ? 'block' : 'none';
-      document.getElementById('waitSelectorInput').value = config.waitSelector || '';
-
-      document.getElementById('itemSelectorInput').value = config.itemSelector || '';
-      document.getElementById('titleSelectorInput').value = config.titleSelector || '';
-      document.getElementById('linkSelectorInput').value = config.linkSelector || '';
-      document.getElementById('linkAttrInput').value = config.linkAttr || 'href';
-      document.getElementById('descriptionSelectorInput').value = config.descriptionSelector || '';
-      document.getElementById('dateSelectorInput').value = config.dateSelector || '';
-      document.getElementById('imageSelectorInput').value = config.imageSelector || '';
-      document.getElementById('imageAttrInput').value = config.imageAttr || 'src';
-
-      document.getElementById('feedNameInput').value = feed.name;
-      document.getElementById('feedIntervalSelect').value = String(feed.interval_mins || 60);
-      document.getElementById('editingFeedId').value = feed.id;
-      document.getElementById('modalTitle').innerText = 'Feed Düzenle: ' + feed.name;
-      document.getElementById('saveFeedSubmitBtn').innerText = 'Değişiklikleri Kaydet';
-
-      switchTab('builder');
-      loadPageInProxy();
-      showToast('Feed düzenleme moduna yüklendi.', 'info');
+    function exportFeedsJson() {
+      var localFeeds = JSON.parse(localStorage.getItem('toplarss_local_feeds') || '[]');
+      var blob = new Blob([JSON.stringify(localFeeds, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'feeds.json';
+      a.click();
     }
 
     function copyToClipboard(text) {
@@ -1334,12 +1492,7 @@
 
     function escapeHtml(str) {
       if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
     // Initial load

@@ -1,0 +1,63 @@
+name: Deploy Web App & RSS Feeds to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Her saat başı otomatik çalışır, feeds.json'daki siteleri tarayıp RSS'leri yeniler
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium & System Dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Build TypeScript Project
+        run: npm run build
+
+      - name: Scrape Feeds & Generate Static RSS 2.0 XML
+        env:
+          PUBLIC_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          PW_NO_SANDBOX: "1"
+        run: npm run scrape
+
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "public/"
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-and-scrape
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

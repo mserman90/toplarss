@@ -1,0 +1,16 @@
+[
+  {
+    "id": "hackernews",
+    "name": "Hacker News En İyiler",
+    "url": "https://news.ycombinator.com",
+    "intervalMins": 60,
+    "config": {
+      "url": "https://news.ycombinator.com",
+      "render": false,
+      "itemSelector": "tr.athing",
+      "titleSelector": ".titleline > a",
+      "linkSelector": ".titleline > a",
+      "dateSelector": ".subtext span.age"
+    }
+  }
+]

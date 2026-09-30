@@ -1,5 +1,7 @@
 # toplarss (Web → RSS 2.0 Besleme Üretici)
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Canl%C4%B1%20Web%20Uygulamas%C4%B1-brightgreen?logo=github)](https://mserman90.github.io/toplarss/)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mserman90/toplarss)
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mserman90/toplarss)
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/mserman90/toplarss)
 
