@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: toplarss
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: DB_PATH
+        value: /app/data/feeds.db
+      - key: PW_MAX_PAGES
+        value: "2"
+      - key: PW_NO_SANDBOX
+        value: "1"
+    disk:
+      name: toplarss-data
+      mountPath: /app/data
+      sizeGB: 1

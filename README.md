@@ -1,5 +1,8 @@
 # toplarss (Web → RSS 2.0 Besleme Üretici)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mserman90/toplarss)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/mserman90/toplarss)
+
 Herhangi bir web sitesinden, tarayıcı üzerinden görsel olarak tıklanan CSS seçicileriyle standart RSS 2.0 beslemesi üreten, SSRF korumalı ve Playwright JavaScript render destekli modern web uygulaması.
 
 Arayüz ve hata mesajları **Türkçe**, kod mimarisi ve tanımlayıcılar **İngilizce** ve katı kurallı TypeScript (strict CommonJS) olarak geliştirilmiştir.
