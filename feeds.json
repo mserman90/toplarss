@@ -1,5 +1,20 @@
 [
   {
+    "id": "sygm",
+    "name": "SYGM Haber Arşivi",
+    "url": "https://www.tarimorman.gov.tr/SYGM/HaberArsivi",
+    "intervalMins": 60,
+    "config": {
+      "url": "https://www.tarimorman.gov.tr/SYGM/HaberArsivi",
+      "render": false,
+      "itemSelector": ".card.arsivdt-container",
+      "titleSelector": ".card-title a",
+      "linkSelector": ".card-title a",
+      "imageSelector": "img.card-img-top",
+      "dateSelector": ".post_details"
+    }
+  },
+  {
     "id": "hackernews",
     "name": "Hacker News En İyiler",
     "url": "https://news.ycombinator.com",

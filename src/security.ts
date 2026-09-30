@@ -2,6 +2,44 @@ import dns from 'dns';
 import net from 'net';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
+const ALLOW_INTRANET_DOMAINS = (process.env.ALLOW_INTRANET_DOMAINS || '.gov.tr,tarimorman.gov.tr,.edu.tr')
+  .split(',')
+  .map((d) => d.trim().toLowerCase())
+  .filter(Boolean);
+
+/**
+ * Checks whether an IP address is loopback (127.0.0.0/8, ::1) or cloud metadata (169.254.0.0/16).
+ * These are NEVER allowed, even for whitelisted institutional domains.
+ */
+export function isCriticalReservedIp(ip: string): boolean {
+  if (ip.startsWith('::ffff:')) {
+    const ipv4 = ip.substring(7);
+    if (net.isIPv4(ipv4)) return isCriticalReservedIp(ipv4);
+  }
+
+  if (net.isIPv4(ip)) {
+    const parts = ip.split('.').map((p) => parseInt(p, 10));
+    if (parts.length !== 4) return true;
+    const [a, b] = parts;
+    // 127.0.0.0/8 (Loopback)
+    if (a === 127) return true;
+    // 0.0.0.0/8 (Current network)
+    if (a === 0) return true;
+    // 169.254.0.0/16 (Link-local & Cloud metadata e.g. 169.254.169.254)
+    if (a === 169 && b === 254) return true;
+    return false;
+  }
+
+  if (net.isIPv6(ip)) {
+    const normalized = ip.toLowerCase();
+    if (normalized === '::1' || normalized === '::') return true;
+    if (/^fe[89ab][0-9a-f]:/i.test(normalized)) return true;
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Checks whether an IP address is private, loopback, link-local, or reserved.
  */
@@ -16,8 +54,8 @@ export function isPrivateIp(ip: string): boolean {
 
   // IPv4 check
   if (net.isIPv4(ip)) {
-    const parts = ip.split('.').map(p => parseInt(p, 10));
-    if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) {
+    const parts = ip.split('.').map((p) => parseInt(p, 10));
+    if (parts.length !== 4 || parts.some((p) => isNaN(p) || p < 0 || p > 255)) {
       return true;
     }
 
@@ -74,7 +112,21 @@ export function isPrivateIp(ip: string): boolean {
 }
 
 /**
- * Asserts that a URL is public and safe to fetch (SSRF prevention).
+ * Checks whether a hostname belongs to an allowed institutional domain
+ * (e.g. *.gov.tr or tarimorman.gov.tr that uses split-horizon DNS inside corporate networks).
+ */
+export function isAllowedInstitutionalDomain(hostname: string): boolean {
+  const lower = hostname.toLowerCase();
+  return ALLOW_INTRANET_DOMAINS.some((allowed) => {
+    if (allowed.startsWith('.')) {
+      return lower.endsWith(allowed);
+    }
+    return lower === allowed || lower.endsWith('.' + allowed);
+  });
+}
+
+/**
+ * Asserts that a URL is public or a trusted institutional split-horizon domain.
  * Throws Turkish descriptive error messages if the URL is invalid or unsafe.
  */
 export async function assertPublicUrl(urlStr: string): Promise<{ parsedUrl: URL; ip: string }> {
@@ -108,15 +160,17 @@ export async function assertPublicUrl(urlStr: string): Promise<{ parsedUrl: URL;
     throw new Error(`Güvenlik engeli: '${hostname}' yerel bir alan adıdır ve erişilemez.`);
   }
 
-  // Check if hostname is an IP address
+  const isWhitelisted = isAllowedInstitutionalDomain(hostname);
+
+  // Check if hostname is an IP address directly
   if (net.isIP(hostname)) {
     if (isPrivateIp(hostname)) {
-      throw new Error(`Güvenlik engeli: Yerel veya özel IP adreslerine (${hostname}) erişim engellendi.`);
+      throw new Error(`Güvenlik engeli: Doğrudan özel IP adreslerine (${hostname}) erişim engellendi.`);
     }
     return { parsedUrl, ip: hostname };
   }
 
-  // Resolve DNS to verify all IP records
+  // Resolve DNS to verify IP records
   let addresses: dns.LookupAddress[];
   try {
     addresses = await dns.promises.lookup(hostname, { all: true });
@@ -129,8 +183,16 @@ export async function assertPublicUrl(urlStr: string): Promise<{ parsedUrl: URL;
   }
 
   for (const record of addresses) {
-    if (isPrivateIp(record.address)) {
-      throw new Error(`Güvenlik engeli: '${hostname}' adresi yerel veya özel ağ IP'sine (${record.address}) işaret ediyor.`);
+    // If the domain is an authorized public domain (like .gov.tr), allow split-horizon intranet IPs,
+    // but ALWAYS strictly block loopback (127.0.0.1) and cloud metadata (169.254.169.254).
+    if (isWhitelisted) {
+      if (isCriticalReservedIp(record.address)) {
+        throw new Error(`Güvenlik engeli: '${hostname}' döngüsel (loopback) veya bulut metadata IP'sine (${record.address}) işaret ediyor.`);
+      }
+    } else {
+      if (isPrivateIp(record.address)) {
+        throw new Error(`Güvenlik engeli: '${hostname}' adresi yerel veya özel ağ IP'sine (${record.address}) işaret ediyor.`);
+      }
     }
   }
 
@@ -139,7 +201,7 @@ export async function assertPublicUrl(urlStr: string): Promise<{ parsedUrl: URL;
 
 /**
  * Performs a safe GET request verifying that the initial URL and all subsequent
- * redirect URLs point to public IP addresses (re-validated on each hop).
+ * redirect URLs point to safe IP addresses (re-validated on each hop).
  */
 export async function safeGet(
   targetUrl: string,
@@ -150,19 +212,18 @@ export async function safeGet(
   const defaultTimeout = 15000;
 
   for (let hop = 0; hop <= maxRedirects; hop++) {
-    // Assert current URL is public before making outbound request
     await assertPublicUrl(currentUrl);
 
     try {
       const response: AxiosResponse<string> = await axios.get(currentUrl, {
         ...options,
-        maxRedirects: 0, // Handle redirects manually to re-verify public safety on every hop
+        maxRedirects: 0,
         validateStatus: (status) => (status >= 200 && status < 400) || status === 404,
         timeout: options?.timeout || defaultTimeout,
         responseType: 'text',
         headers: {
           'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 fetchrss-clone/1.0',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 toplarss/1.0',
           'Accept':
             'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
           'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -170,14 +231,11 @@ export async function safeGet(
         },
       });
 
-      // Handle redirect status codes
       if ([301, 302, 303, 307, 308].includes(response.status)) {
         const redirectLocation = response.headers['location'];
         if (!redirectLocation) {
           throw new Error(`Hedef sunucu ${response.status} yönlendirme kodu verdi ancak konum belirtmedi.`);
         }
-
-        // Resolve redirect URL relative to current URL
         currentUrl = new URL(redirectLocation, currentUrl).href;
         continue;
       }

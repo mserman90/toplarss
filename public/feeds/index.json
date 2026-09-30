@@ -1,10 +1,18 @@
 [
   {
+    "id": "sygm",
+    "name": "SYGM Haber Arşivi",
+    "url": "https://www.tarimorman.gov.tr/SYGM/HaberArsivi",
+    "xmlUrl": "https://mserman90.github.io/toplarss/feeds/sygm.xml",
+    "lastUpdated": "2026-09-30T12:17:32.259Z",
+    "itemCount": 20
+  },
+  {
     "id": "hackernews",
     "name": "Hacker News En İyiler",
     "url": "https://news.ycombinator.com",
     "xmlUrl": "https://mserman90.github.io/toplarss/feeds/hackernews.xml",
-    "lastUpdated": "2026-09-30T11:54:28.898Z",
+    "lastUpdated": "2026-09-30T12:17:32.949Z",
     "itemCount": 30
   }
 ]
