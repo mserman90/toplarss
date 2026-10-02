@@ -1,10 +1,18 @@
 [
   {
+    "id": "inoreader-tarim",
+    "name": "Inoreader - TARIM Akışı",
+    "url": "https://www.inoreader.com/stream/user/1006125058/tag/TARIM/view/html",
+    "xmlUrl": "https://mserman90.github.io/toplarss/feeds/inoreader-tarim.xml",
+    "lastUpdated": "2026-10-02T14:40:27.909Z",
+    "itemCount": 20
+  },
+  {
     "id": "tarimorman-haberler",
     "name": "Tarım ve Orman Bakanlığı Haber Arşivi",
     "url": "https://www.tarimorman.gov.tr/HaberArsivi",
     "xmlUrl": "https://mserman90.github.io/toplarss/feeds/tarimorman-haberler.xml",
-    "lastUpdated": "2026-10-02T13:25:02.302Z",
+    "lastUpdated": "2026-10-02T14:40:28.929Z",
     "itemCount": 20
   },
   {
@@ -12,7 +20,7 @@
     "name": "SYGM Haber Arşivi",
     "url": "https://www.tarimorman.gov.tr/SYGM/HaberArsivi",
     "xmlUrl": "https://mserman90.github.io/toplarss/feeds/sygm.xml",
-    "lastUpdated": "2026-10-02T13:25:02.953Z",
+    "lastUpdated": "2026-10-02T14:40:29.491Z",
     "itemCount": 20
   },
   {
@@ -20,7 +28,7 @@
     "name": "Hacker News En İyiler",
     "url": "https://news.ycombinator.com",
     "xmlUrl": "https://mserman90.github.io/toplarss/feeds/hackernews.xml",
-    "lastUpdated": "2026-10-02T13:25:03.616Z",
+    "lastUpdated": "2026-10-02T14:40:30.144Z",
     "itemCount": 30
   }
 ]

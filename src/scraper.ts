@@ -67,6 +67,33 @@ export function parseDateFlexible(dateStr?: string | null): Date | undefined {
     }
   }
 
+  // Handle relative time strings (e.g. "3m", "2h", "1d", "3w", "5 dakika önce", "2 hours ago")
+  const relMatch = cleanStr.match(/^(\d+)\s*(s|sec|seconds?|saniye|m|min|minutes?|dakika|dk|h|hr|hours?|saat|d|days?|gün|gun|w|weeks?|hafta|mo|months?|ay|y|years?|yıl|yil)(?:\s+(?:ago|önce))?$/i);
+  if (relMatch) {
+    const num = parseInt(relMatch[1], 10);
+    const unit = relMatch[2].toLowerCase();
+    const now = Date.now();
+    let ms = 0;
+    if (unit.startsWith('s')) {
+      ms = num * 1000;
+    } else if (unit.startsWith('m') && !unit.startsWith('mo')) {
+      ms = num * 60 * 1000;
+    } else if (unit.startsWith('h') || unit === 'saat') {
+      ms = num * 3600 * 1000;
+    } else if (unit.startsWith('d') || unit.startsWith('g')) {
+      ms = num * 86400 * 1000;
+    } else if (unit.startsWith('w') || unit.startsWith('haf')) {
+      ms = num * 7 * 86400 * 1000;
+    } else if (unit.startsWith('mo') || unit === 'ay') {
+      ms = num * 30 * 86400 * 1000;
+    } else if (unit.startsWith('y')) {
+      ms = num * 365 * 86400 * 1000;
+    }
+    if (ms > 0) {
+      return new Date(now - ms);
+    }
+  }
+
   return undefined;
 }
 
@@ -136,11 +163,32 @@ export function scrape(html: string, cfg: RSSConfig): RSSItem[] {
 
     const resolvedLink = rawLink ? resolveUrl(rawLink, baseUrl) : baseUrl;
 
+    // Helper to search within the element or in subsequent siblings (useful for flat HTML streams)
+    const findInOrNear = (sel: string) => {
+      let found = $item.find(sel).first();
+      if (!found.length) {
+        found = $item.next(sel);
+      }
+      if (!found.length) {
+        found = $item.nextAll(sel).first();
+      }
+      if (!found.length) {
+        found = $item.nextAll().find(sel).first();
+      }
+      if (!found.length && $item.parent().length && !$item.parent().is('body, html, main')) {
+        found = $item.parent().nextAll(sel).first();
+        if (!found.length) {
+          found = $item.parent().nextAll().find(sel).first();
+        }
+      }
+      return found;
+    };
+
     // Extract Description
     const descSel = (cfg.descSelector || cfg.descriptionSelector)?.trim();
     let description: string | undefined;
     if (descSel) {
-      const $desc = $item.find(descSel).first();
+      const $desc = findInOrNear(descSel);
       if ($desc.length) {
         description = $desc.text().trim() || undefined;
       }
@@ -149,7 +197,7 @@ export function scrape(html: string, cfg: RSSConfig): RSSItem[] {
     // Extract Date
     let pubDate: Date | undefined;
     if (cfg.dateSelector && cfg.dateSelector.trim()) {
-      const $date = $item.find(cfg.dateSelector).first();
+      const $date = findInOrNear(cfg.dateSelector);
       if ($date.length) {
         const rawDate =
           $date.attr('datetime') ||
@@ -164,7 +212,7 @@ export function scrape(html: string, cfg: RSSConfig): RSSItem[] {
     let imageUrl: string | undefined;
     const imageAttr = cfg.imageAttr?.trim() || 'src';
     if (cfg.imageSelector && cfg.imageSelector.trim()) {
-      const $img = $item.find(cfg.imageSelector).first();
+      const $img = findInOrNear(cfg.imageSelector);
       if ($img.length) {
         const rawImg =
           $img.attr(imageAttr) ||

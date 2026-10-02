@@ -563,6 +563,7 @@
     </div>
     <div style="display:flex; gap: 12px; align-items:center; flex-wrap:wrap;">
       <span style="font-weight: 500; color:#93c5fd;">Canlı Beslemeler:</span>
+      <a href="./feeds/inoreader-tarim.xml" target="_blank" style="color:#67e8f9; font-weight:600; text-decoration:none;">🌾 Inoreader TARIM (.xml)</a>
       <a href="./feeds/tarimorman-haberler.xml" target="_blank" style="color:#67e8f9; font-weight:600; text-decoration:none;">🏛️ Bakanlık (.xml)</a>
       <a href="./feeds/sygm.xml" target="_blank" style="color:#67e8f9; font-weight:600; text-decoration:none;">🌊 SYGM (.xml)</a>
       <a href="./feeds/hackernews.xml" target="_blank" style="color:#67e8f9; font-weight:600; text-decoration:none;">📰 HN (.xml)</a>
@@ -581,18 +582,21 @@
           <input
             type="url"
             id="urlInput"
-            value="https://www.tarimorman.gov.tr/SYGM/HaberArsivi"
+            value="https://www.inoreader.com/stream/user/1006125058/tag/TARIM/view/html"
             placeholder="https://..."
           />
         </div>
 
         <label class="checkbox-wrap" title="Dinamik JavaScript sayfaları (SPA) için Playwright Chromium kullanır">
-          <input type="checkbox" id="renderCheckbox" checked />
+          <input type="checkbox" id="renderCheckbox" />
           <span>JavaScript Render (Playwright)</span>
         </label>
         <div style="margin: 8px 0 12px 0;">
           <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px;">⚡ HIZLI KURUMSAL ŞABLONLAR:</div>
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="applyPreset('inoreader_tarim')">
+              🌾 Inoreader TARIM
+            </button>
             <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="applyPreset('tarimorman')">
               🏛️ Bakanlık Haber Arşivi
             </button>
@@ -844,7 +848,19 @@
     // Hızlı Kurumsal Şablonlar
     // -------------------------------------------------------------
     function applyPreset(key) {
-      if (key === 'tarimorman') {
+      if (key === 'inoreader_tarim') {
+        document.getElementById('urlInput').value = 'https://www.inoreader.com/stream/user/1006125058/tag/TARIM/view/html';
+        document.getElementById('itemSelector').value = 'a.title_link';
+        document.getElementById('titleSelector').value = 'a.title_link';
+        document.getElementById('linkSelector').value = 'a.title_link';
+        document.getElementById('descSelector').value = '.article_content';
+        document.getElementById('imageSelector').value = '';
+        document.getElementById('dateSelector').value = '.article_date_short';
+        document.getElementById('feedName').value = 'Inoreader - TARIM Akışı';
+        document.getElementById('renderCheckbox').checked = false;
+        log('🌾 Inoreader - TARIM Akışı şablonu uygulandı.');
+        showToast('Inoreader TARIM seçicileri otomatik dolduruldu!', 'success');
+      } else if (key === 'tarimorman') {
         document.getElementById('urlInput').value = 'https://www.tarimorman.gov.tr/HaberArsivi';
         document.getElementById('itemSelector').value = '.card.arsivdt-container';
         document.getElementById('titleSelector').value = '.card-title a';
@@ -1075,7 +1091,9 @@
         // Fallback: check if matching pre-built feed exists on GitHub Pages!
         try {
           var feedXmlPath = '';
-          if (cfg.url.includes('tarimorman.gov.tr/HaberArsivi')) {
+          if (cfg.url.includes('inoreader.com')) {
+            feedXmlPath = './feeds/inoreader-tarim.xml';
+          } else if (cfg.url.includes('tarimorman.gov.tr/HaberArsivi')) {
             feedXmlPath = './feeds/tarimorman-haberler.xml';
           } else if (cfg.url.includes('tarimorman.gov.tr/SYGM/HaberArsivi')) {
             feedXmlPath = './feeds/sygm.xml';

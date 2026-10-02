@@ -1,5 +1,20 @@
 [
   {
+    "id": "inoreader-tarim",
+    "name": "Inoreader - TARIM Akışı",
+    "url": "https://www.inoreader.com/stream/user/1006125058/tag/TARIM/view/html",
+    "intervalMins": 60,
+    "config": {
+      "url": "https://www.inoreader.com/stream/user/1006125058/tag/TARIM/view/html",
+      "render": false,
+      "itemSelector": "a.title_link",
+      "titleSelector": "a.title_link",
+      "linkSelector": "a.title_link",
+      "descSelector": ".article_content",
+      "dateSelector": ".article_date_short"
+    }
+  },
+  {
     "id": "tarimorman-haberler",
     "name": "Tarım ve Orman Bakanlığı Haber Arşivi",
     "url": "https://www.tarimorman.gov.tr/HaberArsivi",

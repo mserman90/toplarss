@@ -4,220 +4,220 @@
         <title>Hacker News En İyiler</title>
         <link>https://news.ycombinator.com</link>
         <description>Hacker News En İyiler (https://news.ycombinator.com)</description>
-        <lastBuildDate>Fri, 02 Oct 2026 13:25:03 GMT</lastBuildDate>
+        <lastBuildDate>Fri, 02 Oct 2026 13:40:30 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>fetchrss-clone (Web -&gt; RSS 2.0)</generator>
         <language>tr</language>
         <copyright>Tüm hakları kaynak yayına aittir</copyright>
         <item>
+            <title><![CDATA[The Legend of von Neumann [pdf]]]></title>
+            <link>https://gwern.net/doc/math/1973-halmos.pdf</link>
+            <guid isPermaLink="false">https://gwern.net/doc/math/1973-halmos.pdf</guid>
+            <pubDate>Fri, 02 Oct 2026 13:40:30 GMT</pubDate>
+            <description><![CDATA[The Legend of von Neumann [pdf]]]></description>
+        </item>
+        <item>
             <title><![CDATA[Pi 1.0]]></title>
             <link>https://earendil.com/posts/pi-1-0/</link>
             <guid isPermaLink="false">https://earendil.com/posts/pi-1-0/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 20:40:30 GMT</pubDate>
             <description><![CDATA[Pi 1.0]]></description>
         </item>
         <item>
             <title><![CDATA[Shimano Bicycle Museum Review]]></title>
             <link>https://inrng.com/2026/10/shimano-bicycle-museum/</link>
             <guid isPermaLink="false">https://inrng.com/2026/10/shimano-bicycle-museum/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Fri, 02 Oct 2026 05:40:30 GMT</pubDate>
             <description><![CDATA[Shimano Bicycle Museum Review]]></description>
         </item>
         <item>
             <title><![CDATA[Several vulnerabilities have been discovered in the Linux kernel]]></title>
             <link>https://lwn.net/Articles/1097401/</link>
             <guid isPermaLink="false">https://lwn.net/Articles/1097401/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 23:40:30 GMT</pubDate>
             <description><![CDATA[Several vulnerabilities have been discovered in the Linux kernel]]></description>
         </item>
         <item>
             <title><![CDATA[Show HN: Audionaut – an open-source cross-platform multitrack audio editor]]></title>
             <link>https://github.com/kvoltmer/Audionaut</link>
             <guid isPermaLink="false">https://github.com/kvoltmer/Audionaut</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Fri, 02 Oct 2026 08:40:30 GMT</pubDate>
             <description><![CDATA[Show HN: Audionaut – an open-source cross-platform multitrack audio editor]]></description>
         </item>
         <item>
             <title><![CDATA[Clef: Open-weight decision models, and new RL fine-tuning platform]]></title>
             <link>https://blog.cloudflare.com/clef-decision-models/</link>
             <guid isPermaLink="false">https://blog.cloudflare.com/clef-decision-models/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 16:40:30 GMT</pubDate>
             <description><![CDATA[Clef: Open-weight decision models, and new RL fine-tuning platform]]></description>
         </item>
         <item>
             <title><![CDATA[SvelteKit 3]]></title>
             <link>https://svelte.dev/blog/sveltekit-3-is-here</link>
             <guid isPermaLink="false">https://svelte.dev/blog/sveltekit-3-is-here</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 20:40:30 GMT</pubDate>
             <description><![CDATA[SvelteKit 3]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Frog and Toad and the Increasingly Capable Machines]]></title>
+            <link>https://www.frogandtoad.ai/</link>
+            <guid isPermaLink="false">https://www.frogandtoad.ai/</guid>
+            <pubDate>Thu, 01 Oct 2026 22:40:30 GMT</pubDate>
+            <description><![CDATA[Frog and Toad and the Increasingly Capable Machines]]></description>
         </item>
         <item>
             <title><![CDATA[DeepSeek Harness Desktop for macOS and Windows]]></title>
             <link>https://www.deepseek.com/en/harness/</link>
             <guid isPermaLink="false">https://www.deepseek.com/en/harness/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Fri, 02 Oct 2026 03:40:30 GMT</pubDate>
             <description><![CDATA[DeepSeek Harness Desktop for macOS and Windows]]></description>
         </item>
         <item>
             <title><![CDATA[Pi Durable]]></title>
             <link>https://earendil.com/posts/pi-durable/</link>
             <guid isPermaLink="false">https://earendil.com/posts/pi-durable/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 19:40:30 GMT</pubDate>
             <description><![CDATA[Pi Durable]]></description>
-        </item>
-        <item>
-            <title><![CDATA[Git 3.0's upcoming SHA-256 default will be a costly mistake]]></title>
-            <link>https://blog.gitbutler.com/git-3-sha-256</link>
-            <guid isPermaLink="false">https://blog.gitbutler.com/git-3-sha-256</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[Git 3.0's upcoming SHA-256 default will be a costly mistake]]></description>
         </item>
         <item>
             <title><![CDATA[Ask HN: Who is hiring? (October 2026)]]></title>
             <link>https://news.ycombinator.com/item?id=49922569</link>
             <guid isPermaLink="false">https://news.ycombinator.com/item?id=49922569</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 15:40:30 GMT</pubDate>
             <description><![CDATA[Ask HN: Who is hiring? (October 2026)]]></description>
         </item>
         <item>
-            <title><![CDATA[Automatic Transmission – a data-privacy study of connected vehicles]]></title>
-            <link>https://automatictransmission.khoury.northeastern.edu/index.html</link>
-            <guid isPermaLink="false">https://automatictransmission.khoury.northeastern.edu/index.html</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[Automatic Transmission – a data-privacy study of connected vehicles]]></description>
+            <title><![CDATA[Git 3.0's upcoming SHA-256 default will be a costly mistake]]></title>
+            <link>https://blog.gitbutler.com/git-3-sha-256</link>
+            <guid isPermaLink="false">https://blog.gitbutler.com/git-3-sha-256</guid>
+            <pubDate>Thu, 01 Oct 2026 17:40:30 GMT</pubDate>
+            <description><![CDATA[Git 3.0's upcoming SHA-256 default will be a costly mistake]]></description>
         </item>
         <item>
             <title><![CDATA[StreetComplete on iOS is now in public beta]]></title>
             <link>https://github.com/streetcomplete/StreetComplete/issues/5421</link>
             <guid isPermaLink="false">https://github.com/streetcomplete/StreetComplete/issues/5421</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 14:40:30 GMT</pubDate>
             <description><![CDATA[StreetComplete on iOS is now in public beta]]></description>
         </item>
         <item>
-            <title><![CDATA[Frog and Toad and the Increasingly Capable Machines]]></title>
-            <link>https://www.frogandtoad.ai/</link>
-            <guid isPermaLink="false">https://www.frogandtoad.ai/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[Frog and Toad and the Increasingly Capable Machines]]></description>
+            <title><![CDATA[Automatic Transmission – a data-privacy study of connected vehicles]]></title>
+            <link>https://automatictransmission.khoury.northeastern.edu/index.html</link>
+            <guid isPermaLink="false">https://automatictransmission.khoury.northeastern.edu/index.html</guid>
+            <pubDate>Thu, 01 Oct 2026 20:40:30 GMT</pubDate>
+            <description><![CDATA[Automatic Transmission – a data-privacy study of connected vehicles]]></description>
         </item>
         <item>
             <title><![CDATA[Turbo Haskell]]></title>
             <link>https://comonad.com/reader/2026/turbo-haskell/</link>
             <guid isPermaLink="false">https://comonad.com/reader/2026/turbo-haskell/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Fri, 02 Oct 2026 01:40:30 GMT</pubDate>
             <description><![CDATA[Turbo Haskell]]></description>
         </item>
         <item>
             <title><![CDATA[Using Opus 5.5 to discover a new eyewitness record of the dodo]]></title>
             <link>https://resobscura.substack.com/p/using-opus-55-to-discover-a-new-eyewitness</link>
             <guid isPermaLink="false">https://resobscura.substack.com/p/using-opus-55-to-discover-a-new-eyewitness</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 21:40:30 GMT</pubDate>
             <description><![CDATA[Using Opus 5.5 to discover a new eyewitness record of the dodo]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Don't be fooled–LLMs don't reason]]></title>
+            <link>https://www.technologyreview.com/2026/10/02/1145639/dont-be-fooled-llms-dont-reason/</link>
+            <guid isPermaLink="false">https://www.technologyreview.com/2026/10/02/1145639/dont-be-fooled-llms-dont-reason/</guid>
+            <pubDate>Fri, 02 Oct 2026 14:01:30 GMT</pubDate>
+            <description><![CDATA[Don't be fooled–LLMs don't reason]]></description>
         </item>
         <item>
             <title><![CDATA[RIP, vector database]]></title>
             <link>https://turbopuffer.com/blog/rip-vector-database</link>
             <guid isPermaLink="false">https://turbopuffer.com/blog/rip-vector-database</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 16:40:30 GMT</pubDate>
             <description><![CDATA[RIP, vector database]]></description>
         </item>
         <item>
             <title><![CDATA[Various Projects Find Hidden SDR Capabilities in ESP32 Microcontrollers]]></title>
             <link>https://www.rtl-sdr.com/various-projects-independently-find-hidden-sdr-capabilities-in-esp32-microcontrollers/</link>
             <guid isPermaLink="false">https://www.rtl-sdr.com/various-projects-independently-find-hidden-sdr-capabilities-in-esp32-microcontrollers/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 15:40:30 GMT</pubDate>
             <description><![CDATA[Various Projects Find Hidden SDR Capabilities in ESP32 Microcontrollers]]></description>
-        </item>
-        <item>
-            <title><![CDATA[How Singapore's government-run dating service works]]></title>
-            <link>https://www.singapore-samizdat.com/p/how-singapores-government-run-dating-service-firstdate-works</link>
-            <guid isPermaLink="false">https://www.singapore-samizdat.com/p/how-singapores-government-run-dating-service-firstdate-works</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[How Singapore's government-run dating service works]]></description>
         </item>
         <item>
             <title><![CDATA[Vote on which of Hacker News' challenges for AI have been met]]></title>
             <link>https://stoppels.ch/goalposts/</link>
             <guid isPermaLink="false">https://stoppels.ch/goalposts/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 18:40:30 GMT</pubDate>
             <description><![CDATA[Vote on which of Hacker News' challenges for AI have been met]]></description>
         </item>
         <item>
             <title><![CDATA[CSS Bed: Classless CSS themes to use as starting points in web development]]></title>
             <link>https://www.cssbed.com/</link>
             <guid isPermaLink="false">https://www.cssbed.com/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 21:40:30 GMT</pubDate>
             <description><![CDATA[CSS Bed: Classless CSS themes to use as starting points in web development]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Memory executives expect RAM shortage to continue through 2028]]></title>
+            <link>https://arstechnica.com/information-technology/2026/10/memory-supplies-are-only-getting-tighter-micron-ceo-says/</link>
+            <guid isPermaLink="false">https://arstechnica.com/information-technology/2026/10/memory-supplies-are-only-getting-tighter-micron-ceo-says/</guid>
+            <pubDate>Fri, 02 Oct 2026 12:40:30 GMT</pubDate>
+            <description><![CDATA[Memory executives expect RAM shortage to continue through 2028]]></description>
         </item>
         <item>
             <title><![CDATA[Show HN: Janus – Go binary that runs GGUF models via Vulkan on AMD/Intel/Nvidia]]></title>
             <link>https://github.com/Vibra-Ingenn/Janus</link>
             <guid isPermaLink="false">https://github.com/Vibra-Ingenn/Janus</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 21:40:30 GMT</pubDate>
             <description><![CDATA[Show HN: Janus – Go binary that runs GGUF models via Vulkan on AMD/Intel/Nvidia]]></description>
-        </item>
-        <item>
-            <title><![CDATA[ArXiv's Updated Rate Limit Policy]]></title>
-            <link>https://blog.arxiv.org/2026/10/01/updated-rate-limit-policy/</link>
-            <guid isPermaLink="false">https://blog.arxiv.org/2026/10/01/updated-rate-limit-policy/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[ArXiv's Updated Rate Limit Policy]]></description>
         </item>
         <item>
             <title><![CDATA[Cloudflare K2: serverless event streams]]></title>
             <link>https://blog.cloudflare.com/cloudflare-k2-streams/</link>
             <guid isPermaLink="false">https://blog.cloudflare.com/cloudflare-k2-streams/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 14:40:30 GMT</pubDate>
             <description><![CDATA[Cloudflare K2: serverless event streams]]></description>
-        </item>
-        <item>
-            <title><![CDATA[Context Language Models]]></title>
-            <link>https://arxiv.org/abs/2609.37725</link>
-            <guid isPermaLink="false">https://arxiv.org/abs/2609.37725</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[Context Language Models]]></description>
         </item>
         <item>
             <title><![CDATA[Oxygen-deprived underwater zones may not be “dead zones” but clue to early life]]></title>
             <link>https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2026AV002570</link>
             <guid isPermaLink="false">https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2026AV002570</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 19:40:30 GMT</pubDate>
             <description><![CDATA[Oxygen-deprived underwater zones may not be “dead zones” but clue to early life]]></description>
-        </item>
-        <item>
-            <title><![CDATA[How to speed up the Rust compiler in September 2026]]></title>
-            <link>https://nnethercote.github.io/2026/09/30/how-to-speed-up-the-rust-compiler-in-september-2026.html</link>
-            <guid isPermaLink="false">https://nnethercote.github.io/2026/09/30/how-to-speed-up-the-rust-compiler-in-september-2026.html</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[How to speed up the Rust compiler in September 2026]]></description>
         </item>
         <item>
             <title><![CDATA[Butterflies use optical illusions to dodge predators]]></title>
             <link>https://www.essex.ac.uk/news/2026/09/30/butterflies-use-optical-illusions-to-dodge-predators</link>
             <guid isPermaLink="false">https://www.essex.ac.uk/news/2026/09/30/butterflies-use-optical-illusions-to-dodge-predators</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
+            <pubDate>Thu, 01 Oct 2026 23:40:30 GMT</pubDate>
             <description><![CDATA[Butterflies use optical illusions to dodge predators]]></description>
         </item>
         <item>
-            <title><![CDATA[RacketCon Is Saturday]]></title>
-            <link>https://con.racket-lang.org/</link>
-            <guid isPermaLink="false">https://con.racket-lang.org/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[RacketCon Is Saturday]]></description>
+            <title><![CDATA[Context Language Models]]></title>
+            <link>https://arxiv.org/abs/2609.37725</link>
+            <guid isPermaLink="false">https://arxiv.org/abs/2609.37725</guid>
+            <pubDate>Thu, 01 Oct 2026 15:40:30 GMT</pubDate>
+            <description><![CDATA[Context Language Models]]></description>
         </item>
         <item>
-            <title><![CDATA[GPT-Synopsys: Frontier Intelligence to Revolutionize Chip Design]]></title>
-            <link>https://news.synopsys.com/2026-09-30-OpenAI-and-Synopsys-Announce-GPT-Synopsys-Frontier-Intelligence-to-Revolutionize-Chip-Design</link>
-            <guid isPermaLink="false">https://news.synopsys.com/2026-09-30-OpenAI-and-Synopsys-Announce-GPT-Synopsys-Frontier-Intelligence-to-Revolutionize-Chip-Design</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[GPT-Synopsys: Frontier Intelligence to Revolutionize Chip Design]]></description>
+            <title><![CDATA[ArXiv's Updated Rate Limit Policy]]></title>
+            <link>https://blog.arxiv.org/2026/10/01/updated-rate-limit-policy/</link>
+            <guid isPermaLink="false">https://blog.arxiv.org/2026/10/01/updated-rate-limit-policy/</guid>
+            <pubDate>Thu, 01 Oct 2026 20:40:30 GMT</pubDate>
+            <description><![CDATA[ArXiv's Updated Rate Limit Policy]]></description>
         </item>
         <item>
-            <title><![CDATA[Gemini 4 Argon]]></title>
-            <link>https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/</link>
-            <guid isPermaLink="false">https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/</guid>
-            <pubDate>Fri, 02 Oct 2026 13:25:03 GMT</pubDate>
-            <description><![CDATA[Gemini 4 Argon]]></description>
+            <title><![CDATA[How to speed up the Rust compiler in September 2026]]></title>
+            <link>https://nnethercote.github.io/2026/09/30/how-to-speed-up-the-rust-compiler-in-september-2026.html</link>
+            <guid isPermaLink="false">https://nnethercote.github.io/2026/09/30/how-to-speed-up-the-rust-compiler-in-september-2026.html</guid>
+            <pubDate>Thu, 01 Oct 2026 14:40:30 GMT</pubDate>
+            <description><![CDATA[How to speed up the Rust compiler in September 2026]]></description>
+        </item>
+        <item>
+            <title><![CDATA[How Singapore's government-run dating service works]]></title>
+            <link>https://www.singapore-samizdat.com/p/how-singapores-government-run-dating-service-firstdate-works</link>
+            <guid isPermaLink="false">https://www.singapore-samizdat.com/p/how-singapores-government-run-dating-service-firstdate-works</guid>
+            <pubDate>Fri, 02 Oct 2026 02:40:30 GMT</pubDate>
+            <description><![CDATA[How Singapore's government-run dating service works]]></description>
         </item>
     </channel>
 </rss>
