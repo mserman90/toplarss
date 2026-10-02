@@ -4,6 +4,11 @@ feeds.db
 feeds.db-journal
 feeds.db-wal
 feeds.db-shm
+.env
+.env.*
 .git
+.github
+data
 test
 scratch
+*.log

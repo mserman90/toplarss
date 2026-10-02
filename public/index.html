@@ -556,6 +556,19 @@
     </div>
   </header>
 
+  <!-- GitHub Pages Notice Banner -->
+  <div id="ghNoticeBanner" style="display:none; background: #1e3a5f; border-bottom: 1px solid #2563eb; padding: 10px 24px; font-size: 13px; color: #dbeafe; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+    <div>
+      ℹ️ <strong>GitHub Pages Modundasınız:</strong> Yeni siteleri görsel seçiciyle taramak için yerel sunucuyu (<a href="http://localhost:3000" target="_blank" style="color: #93c5fd; font-weight: bold; text-decoration: underline;">http://localhost:3000</a>) açın.
+    </div>
+    <div style="display:flex; gap: 12px; align-items:center; flex-wrap:wrap;">
+      <span style="font-weight: 500; color:#93c5fd;">Canlı Beslemeler:</span>
+      <a href="./feeds/tarimorman-haberler.xml" target="_blank" style="color:#67e8f9; font-weight:600; text-decoration:none;">🏛️ Bakanlık (.xml)</a>
+      <a href="./feeds/sygm.xml" target="_blank" style="color:#67e8f9; font-weight:600; text-decoration:none;">🌊 SYGM (.xml)</a>
+      <a href="./feeds/hackernews.xml" target="_blank" style="color:#67e8f9; font-weight:600; text-decoration:none;">📰 HN (.xml)</a>
+    </div>
+  </div>
+
   <!-- Main Split Layout -->
   <main>
     <!-- Sol Panel (360px form) -->
@@ -917,6 +930,28 @@
       iframeStatus.innerText = 'Sayfa yükleniyor...';
       log('Sayfa proxy üzerinden çekiliyor: ' + cfg.url + (cfg.render ? ' [Playwright render]' : ' [Statik]'));
 
+      if (window.location.hostname.includes('github.io')) {
+        log('ℹ️ GitHub Pages statik modundasınız. Canlı sayfa yükleme ve görsel seçici için yerel sunucu (http://localhost:3000) gereklidir.');
+        showToast('Görsel seçici için yerel sunucuyu (http://localhost:3000) açın.', 'info', 6000);
+        placeholder.style.display = 'block';
+        iframe.style.display = 'none';
+        iframeDot.classList.remove('online');
+        iframeStatus.innerText = 'GitHub Pages Statik Modu';
+        placeholder.innerHTML = `
+          <div style="font-size: 40px; margin-bottom: 12px;">🌐</div>
+          <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #93c5fd;">GitHub Pages (Statik Demo) Modundasınız</div>
+          <div style="font-size: 13px; max-width: 500px; line-height: 1.6; margin: 0 auto; color: #cbd5e1; text-align: left; background: rgba(30, 58, 95, 0.5); padding: 16px 20px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
+            GitHub Pages statik bir barındırma alanıdır ve tarayıcınızın CORS güvenlik kısıtlamaları nedeniyle harici sayfaları doğrudan iframe içine yükleyemez.<br><br>
+            <strong>İki kolay çözümünüz var:</strong><br>
+            1️⃣ <strong>Yerel Sunucu ile Açın:</strong> Bilgisayarınızda terminalde <code>npm start</code> çalıştırıp <a href="http://localhost:3000" target="_blank" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">http://localhost:3000</a> adresini açarak sayfayı doğrudan görsel seçiciyle yükleyebilirsiniz.<br><br>
+            2️⃣ <strong>Hazır Beslemeleri Kullanın:</strong> Sayfanın üstündeki banner'dan veya aşağıdaki listeden üretilmiş canlı RSS linklerine doğrudan tıklayabilirsiniz.
+          </div>
+        `;
+        loadBtn.disabled = false;
+        loadBtn.innerText = '🌐 Sayfayı Yükle';
+        return;
+      }
+
       var proxyUrl = '/api/proxy?url=' + encodeURIComponent(cfg.url);
       if (cfg.render) proxyUrl += '&render=1';
       if (cfg.waitSelector) proxyUrl += '&waitSelector=' + encodeURIComponent(cfg.waitSelector);
@@ -1037,6 +1072,41 @@
           showToast('Hata: ' + (data.error || 'Önizleme alınamadı'), 'error');
         }
       } catch (err) {
+        // Fallback: check if matching pre-built feed exists on GitHub Pages!
+        try {
+          var feedXmlPath = '';
+          if (cfg.url.includes('tarimorman.gov.tr/HaberArsivi')) {
+            feedXmlPath = './feeds/tarimorman-haberler.xml';
+          } else if (cfg.url.includes('tarimorman.gov.tr/SYGM/HaberArsivi')) {
+            feedXmlPath = './feeds/sygm.xml';
+          } else if (cfg.url.includes('news.ycombinator.com')) {
+            feedXmlPath = './feeds/hackernews.xml';
+          }
+
+          if (feedXmlPath) {
+            var xmlRes = await fetch(feedXmlPath);
+            if (xmlRes.ok) {
+              var xmlText = await xmlRes.text();
+              var xmlDoc = new DOMParser().parseFromString(xmlText, 'application/xml');
+              var xmlItems = xmlDoc.querySelectorAll('item');
+              var items = [];
+              xmlItems.forEach(function(el, idx) {
+                if (idx >= 10) return;
+                var title = el.querySelector('title') ? el.querySelector('title').textContent : 'Başlıksız';
+                var link = el.querySelector('link') ? el.querySelector('link').textContent : '';
+                var desc = el.querySelector('description') ? el.querySelector('description').textContent : '';
+                var enc = el.querySelector('enclosure');
+                var img = enc ? enc.getAttribute('url') : '';
+                var pubDate = el.querySelector('pubDate') ? el.querySelector('pubDate').textContent : '';
+                items.push({ title: title, link: link, description: desc, imageUrl: img, pubDate: pubDate });
+              });
+              renderPreview(items, xmlItems.length);
+              log('✅ Önizleme hazır (Statik beslemeden yüklendi: ' + xmlItems.length + ' öğe).');
+              showToast('Önizleme hazır (' + xmlItems.length + ' öğe)', 'success');
+              return;
+            }
+          }
+        } catch(e) {}
         log('❌ Önizleme ağ hatası: ' + err.message);
         showToast('Sunucu ile iletişim kurulamadı.', 'error');
       } finally {
@@ -1197,8 +1267,40 @@
             `;
             tbody.appendChild(tr);
           });
-        }
       } catch (err) {
+        // Fallback for GitHub Pages static mode
+        try {
+          var ghRes = await fetch('./feeds/index.json');
+          if (ghRes.ok) {
+            var manifest = await ghRes.json();
+            badge.innerText = manifest.length;
+            tbody.innerHTML = '';
+            manifest.forEach(function(m) {
+              var tr = document.createElement('tr');
+              var fullUrl = m.xmlUrl || (window.location.origin + '/feeds/' + m.id + '.xml');
+              var dateStr = m.lastUpdated ? new Date(m.lastUpdated).toLocaleString('tr-TR') : 'Güncel';
+              tr.innerHTML = `
+                <td>
+                  <strong>${escapeHtml(m.name)}</strong>
+                  <div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(m.id)}</div>
+                </td>
+                <td>
+                  <a href="${fullUrl}" target="_blank" class="feed-xml-link">
+                    🔗 ${fullUrl}
+                  </a>
+                </td>
+                <td>60 dk</td>
+                <td style="color: var(--text-muted);">${dateStr}</td>
+                <td><span class="badge-status badge-ok">✅ Aktif (${m.itemCount} öğe)</span></td>
+                <td style="text-align: right; white-space: nowrap;">
+                  <button class="btn btn-secondary btn-sm" onclick="copyFeedUrl('${fullUrl}')">📋 Kopyala</button>
+                </td>
+              `;
+              tbody.appendChild(tr);
+            });
+            return;
+          }
+        } catch(e) {}
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 24px;">Feed listesi alınamadı.</td></tr>';
       }
     }
@@ -1255,6 +1357,17 @@
 
     // Initial load
     window.addEventListener('DOMContentLoaded', function() {
+      if (window.location.hostname.includes('github.io')) {
+        var banner = document.getElementById('ghNoticeBanner');
+        if (banner) banner.style.display = 'flex';
+        var dot = document.getElementById('serverDot');
+        var txt = document.getElementById('serverText');
+        if (dot && txt) {
+          dot.className = 'status-dot';
+          dot.style.background = '#38bdf8';
+          txt.innerText = 'GitHub Pages Statik Modu';
+        }
+      }
       log('🚀 FetchRSS Clone arayüzü başlatıldı.');
       loadFeeds();
     });
