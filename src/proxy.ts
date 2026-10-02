@@ -3,90 +3,204 @@ import { fetchPage } from './fetcher';
 
 /**
  * Builds the visual picker script and stylesheet injected into the proxied HTML.
+ * Includes a top floating toolbar with buttons:
+ * Öğe, Başlık, Link, Açıklama, Görsel + Bitti
+ * Hover outline, CSS selector generation (id > class > nth-of-type, max 4 levels),
+ * and postMessage communication with parent.
  */
 function getPickerInjection(): string {
   return `
-<style id="fetchrss-picker-styles">
-  .fetchrss-hovered {
-    outline: 2px dashed #2563eb !important;
-    background-color: rgba(37, 99, 235, 0.08) !important;
-    cursor: crosshair !important;
-  }
-  .fetchrss-selected-item {
-    outline: 2px solid #16a34a !important;
-    background-color: rgba(22, 163, 74, 0.06) !important;
-  }
-  .fetchrss-selected-title {
-    outline: 2px solid #d97706 !important;
-    background-color: rgba(217, 119, 6, 0.12) !important;
-  }
-  .fetchrss-selected-link {
-    outline: 2px solid #9333ea !important;
-    background-color: rgba(147, 51, 234, 0.12) !important;
-  }
-  .fetchrss-selected-desc {
-    outline: 2px solid #0891b2 !important;
-    background-color: rgba(8, 145, 178, 0.12) !important;
-  }
-  .fetchrss-selected-date {
-    outline: 2px solid #dc2626 !important;
-    background-color: rgba(220, 38, 38, 0.12) !important;
-  }
-  .fetchrss-selected-image {
-    outline: 2px solid #ea580c !important;
-    background-color: rgba(234, 88, 12, 0.12) !important;
-  }
-  #fetchrss-floating-badge {
+<style id="frss-picker-styles">
+  #frss-top-toolbar {
     position: fixed;
-    bottom: 12px;
-    right: 12px;
+    top: 0;
+    left: 0;
+    right: 0;
     z-index: 2147483647;
-    background: #1e293b;
+    background: #0f172a;
     color: #f8fafc;
-    padding: 8px 14px;
-    border-radius: 8px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    border-bottom: 2px solid #2563eb;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 13px;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    user-select: none;
+  }
+  .frss-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .frss-toolbar-title {
+    font-weight: 700;
+    color: #60a5fa;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+  }
+  .frss-mode-btn {
+    background: #1e293b;
     border: 1px solid #475569;
-    pointer-events: none;
-    transition: opacity 0.2s;
+    color: #f1f5f9;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .frss-mode-btn:hover {
+    background: #334155;
+    border-color: #60a5fa;
+  }
+  .frss-mode-btn.active {
+    background: #2563eb;
+    border-color: #3b82f6;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
+  }
+  .frss-btn-finish {
+    background: #16a34a !important;
+    border-color: #22c55e !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 6px 16px !important;
+    margin-left: 8px;
+  }
+  .frss-btn-finish:hover {
+    background: #15803d !important;
+  }
+  #frss-status-badge {
+    font-size: 12px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 320px;
+  }
+
+  body {
+    padding-top: 50px !important;
+  }
+
+  .frss-hovered {
+    outline: 2px dashed #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
+    cursor: crosshair !important;
+  }
+  .frss-selected-item {
+    outline: 2px solid #16a34a !important;
+    background-color: rgba(22, 163, 74, 0.08) !important;
+  }
+  .frss-selected-title {
+    outline: 2px solid #d97706 !important;
+    background-color: rgba(217, 119, 6, 0.15) !important;
+  }
+  .frss-selected-link {
+    outline: 2px solid #9333ea !important;
+    background-color: rgba(147, 51, 234, 0.15) !important;
+  }
+  .frss-selected-desc {
+    outline: 2px solid #0891b2 !important;
+    background-color: rgba(8, 145, 178, 0.15) !important;
+  }
+  .frss-selected-image {
+    outline: 2px solid #ea580c !important;
+    background-color: rgba(234, 88, 12, 0.15) !important;
+  }
+  .frss-selected-date {
+    outline: 2px solid #dc2626 !important;
+    background-color: rgba(220, 38, 38, 0.15) !important;
   }
 </style>
-<div id="fetchrss-floating-badge">Seçici Hazır: Liste Öğesini Tıklayın</div>
-<script id="fetchrss-picker-script">
+
+<div id="frss-top-toolbar">
+  <div class="frss-toolbar-left">
+    <div class="frss-toolbar-title">🎯 Seçici:</div>
+    <button type="button" class="frss-mode-btn active" data-mode="item" onclick="window.frssSetMode('item')">📦 Öğe</button>
+    <button type="button" class="frss-mode-btn" data-mode="title" onclick="window.frssSetMode('title')">🏷️ Başlık</button>
+    <button type="button" class="frss-mode-btn" data-mode="link" onclick="window.frssSetMode('link')">🔗 Link</button>
+    <button type="button" class="frss-mode-btn" data-mode="desc" onclick="window.frssSetMode('desc')">📝 Açıklama</button>
+    <button type="button" class="frss-mode-btn" data-mode="image" onclick="window.frssSetMode('image')">🖼️ Görsel</button>
+    <button type="button" class="frss-mode-btn" data-mode="date" onclick="window.frssSetMode('date')">📅 Tarih</button>
+    <button type="button" class="frss-mode-btn frss-btn-finish" onclick="window.frssFinish()">✅ Bitti</button>
+  </div>
+  <div id="frss-status-badge">Mod: Öğe (Liste öğesine tıklayın)</div>
+</div>
+
+<script id="frss-picker-script">
 (function() {
-  var activeMode = 'item'; // 'item' | 'title' | 'link' | 'description' | 'date' | 'image'
+  var activeMode = 'item';
   var hoveredEl = null;
   var currentItemEl = null;
+  var selectors = {
+    itemSelector: '',
+    titleSelector: '',
+    linkSelector: '',
+    descSelector: '',
+    imageSelector: '',
+    dateSelector: ''
+  };
 
-  var badge = document.getElementById('fetchrss-floating-badge');
-  function updateBadge(text) {
-    if (badge) badge.innerText = text;
+  var statusBadge = document.getElementById('frss-status-badge');
+  function updateStatus(text) {
+    if (statusBadge) statusBadge.innerText = text;
   }
 
   var modeLabels = {
-    item: 'Seçim Modu: Liste Öğesi (Her Bir Haber/Kart)',
-    title: 'Seçim Modu: Başlık',
-    link: 'Seçim Modu: Bağlantı (Link)',
-    description: 'Seçim Modu: Açıklama/İçerik',
-    date: 'Seçim Modu: Tarih',
-    image: 'Seçim Modu: Görsel (Resim)'
+    item: 'Mod: Öğe (Her bir haber/kart kutusuna tıklayın)',
+    title: 'Mod: Başlık (Başlık metnine tıklayın)',
+    link: 'Mod: Link (Tıklanabilir bağlantıya tıklayın)',
+    desc: 'Mod: Açıklama (Özet/metne tıklayın)',
+    image: 'Mod: Görsel (Resme tıklayın)',
+    date: 'Mod: Tarih (Yayın tarihine tıklayın)'
   };
 
-  // Helper to generate a clean, robust CSS selector
-  function getSelector(el, root) {
+  window.frssSetMode = function(mode) {
+    activeMode = mode;
+    document.querySelectorAll('.frss-mode-btn').forEach(function(b) {
+      if (b.getAttribute('data-mode') === mode) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+    updateStatus(modeLabels[mode] || ('Mod: ' + mode));
+  };
+
+  window.frssFinish = function() {
+    window.parent.postMessage({
+      type: 'frss-selectors',
+      selectors: selectors
+    }, '*');
+    updateStatus('Seçimler tamamlandı ve aktarıldı!');
+  };
+
+  /**
+   * Generates a CSS selector using: id > class > nth-of-type, max 4 levels
+   */
+  function generateCssSelector(el, root) {
     if (!el || el === document.body || el === document.documentElement) return '';
     if (root && el === root) return '';
 
-    // If root is provided, build relative selector
+    // Relative selector within selected item root
     if (root) {
       var tag = el.tagName.toLowerCase();
       var classes = Array.from(el.classList).filter(function(c) {
-        return !c.startsWith('fetchrss-');
+        return !c.startsWith('frss-');
       });
 
+      // 1. Try class within root
       if (classes.length > 0) {
         var clsSel = tag + '.' + classes.slice(0, 2).map(CSS.escape).join('.');
         if (root.querySelectorAll(clsSel).length === 1) {
@@ -94,128 +208,167 @@ function getPickerInjection(): string {
         }
       }
 
-      // Check direct child or descendant tag
+      // 2. Try simple tag within root
       if (root.querySelectorAll(tag).length === 1) {
         return tag;
       }
 
-      // Build relative path up to root
+      // 3. Walk upwards up to 4 levels relative to root
       var path = [];
       var curr = el;
-      while (curr && curr !== root && curr !== document.body) {
+      var depth = 0;
+      while (curr && curr !== root && curr !== document.body && depth < 4) {
         var cTag = curr.tagName.toLowerCase();
+        if (curr.id) {
+          cTag = '#' + CSS.escape(curr.id);
+          path.unshift(cTag);
+          break;
+        }
         var cClasses = Array.from(curr.classList).filter(function(c) {
-          return !c.startsWith('fetchrss-');
+          return !c.startsWith('frss-');
         });
         if (cClasses.length > 0) {
-          cTag += '.' + cClasses.slice(0, 1).map(CSS.escape).join('.');
+          cTag += '.' + CSS.escape(cClasses[0]);
+        } else if (curr.parentElement) {
+          var siblings = Array.from(curr.parentElement.children).filter(function(s) {
+            return s.tagName.toLowerCase() === cTag;
+          });
+          if (siblings.length > 1) {
+            var index = siblings.indexOf(curr) + 1;
+            cTag += ':nth-of-type(' + index + ')';
+          }
         }
         path.unshift(cTag);
         curr = curr.parentElement;
+        depth++;
       }
       return path.join(' > ');
     }
 
     // Absolute / container selector for 'item'
-    var tag = el.tagName.toLowerCase();
-    var classes = Array.from(el.classList).filter(function(c) {
-      return !c.startsWith('fetchrss-');
-    });
+    var path = [];
+    var curr = el;
+    var depth = 0;
 
-    if (classes.length > 0) {
-      var classSel = '.' + classes.map(CSS.escape).join('.');
-      var matches = document.querySelectorAll(classSel);
-      if (matches.length >= 2) {
-        return classSel;
-      }
-      var tagClassSel = tag + classSel;
-      matches = document.querySelectorAll(tagClassSel);
-      if (matches.length >= 2) {
-        return tagClassSel;
-      }
-    }
+    while (curr && curr !== document.body && curr !== document.documentElement && depth < 4) {
+      var tag = curr.tagName.toLowerCase();
 
-    // Check parent list item or container pattern
-    if (el.parentElement) {
-      var parentClasses = Array.from(el.parentElement.classList).filter(function(c) {
-        return !c.startsWith('fetchrss-');
-      });
-      if (parentClasses.length > 0) {
-        var parentSel = '.' + parentClasses.map(CSS.escape).join('.') + ' > ' + tag;
-        if (document.querySelectorAll(parentSel).length >= 2) {
-          return parentSel;
+      // 1. ID selector (if unique)
+      if (curr.id && !/^\d/.test(curr.id)) {
+        var idSel = '#' + CSS.escape(curr.id);
+        if (document.querySelectorAll(idSel).length === 1) {
+          path.unshift(idSel);
+          break;
         }
       }
+
+      // 2. Class selector
+      var classes = Array.from(curr.classList).filter(function(c) {
+        return !c.startsWith('frss-');
+      });
+
+      if (classes.length > 0) {
+        var classSel = '.' + classes.slice(0, 2).map(CSS.escape).join('.');
+        var matches = document.querySelectorAll(classSel);
+        if (matches.length >= 2) {
+          path.unshift(classSel);
+          break;
+        }
+        var tagClassSel = tag + classSel;
+        matches = document.querySelectorAll(tagClassSel);
+        if (matches.length >= 2) {
+          path.unshift(tagClassSel);
+          break;
+        }
+      }
+
+      // 3. nth-of-type fallback
+      if (curr.parentElement) {
+        var siblings = Array.from(curr.parentElement.children).filter(function(s) {
+          return s.tagName.toLowerCase() === tag;
+        });
+        if (siblings.length > 1) {
+          var index = siblings.indexOf(curr) + 1;
+          tag += ':nth-of-type(' + index + ')';
+        }
+      }
+
+      path.unshift(tag);
+      curr = curr.parentElement;
+      depth++;
     }
 
-    // Fallback: tag + first class or tag alone
-    if (classes.length > 0) {
-      return tag + '.' + CSS.escape(classes[0]);
-    }
-    return tag;
+    var fullSel = path.join(' > ');
+    return fullSel || el.tagName.toLowerCase();
   }
 
-  // Hover effect
+  // Hover Outline
   document.addEventListener('mouseover', function(e) {
-    if (hoveredEl) {
-      hoveredEl.classList.remove('fetchrss-hovered');
-    }
     var target = e.target;
-    if (!target || target === document.body || target === document.documentElement || target.id === 'fetchrss-floating-badge') {
-      return;
+    if (!target || target === document.body || target === document.documentElement) return;
+    if (target.closest && target.closest('#frss-top-toolbar')) return;
+
+    if (hoveredEl && hoveredEl !== target) {
+      hoveredEl.classList.remove('frss-hovered');
     }
     hoveredEl = target;
-    hoveredEl.classList.add('fetchrss-hovered');
+    hoveredEl.classList.add('frss-hovered');
   }, true);
 
   document.addEventListener('mouseout', function(e) {
     if (hoveredEl) {
-      hoveredEl.classList.remove('fetchrss-hovered');
+      hoveredEl.classList.remove('frss-hovered');
       hoveredEl = null;
     }
   }, true);
 
-  // Click selection
+  // Click Selection
   document.addEventListener('click', function(e) {
+    var target = e.target;
+    if (!target || target === document.body || target === document.documentElement) return;
+    if (target.closest && target.closest('#frss-top-toolbar')) return;
+
     e.preventDefault();
     e.stopPropagation();
 
-    var target = e.target;
-    if (!target || target === document.body || target === document.documentElement || target.id === 'fetchrss-floating-badge') {
-      return;
-    }
-
     if (activeMode === 'item') {
       currentItemEl = target;
-      var selector = getSelector(target);
+      var sel = generateCssSelector(target);
+      selectors.itemSelector = sel;
 
-      // Highlight all matching items
-      document.querySelectorAll('.fetchrss-selected-item').forEach(function(el) {
-        el.classList.remove('fetchrss-selected-item');
+      document.querySelectorAll('.frss-selected-item').forEach(function(el) {
+        el.classList.remove('frss-selected-item');
       });
       try {
-        var allItems = document.querySelectorAll(selector);
-        allItems.forEach(function(el) {
-          el.classList.add('fetchrss-selected-item');
+        var matches = document.querySelectorAll(sel);
+        matches.forEach(function(el) {
+          el.classList.add('frss-selected-item');
         });
       } catch (err) {}
 
+      updateStatus('Öğe seçildi: ' + sel);
+
+      // Post partial event
+      window.parent.postMessage({
+        type: 'frss-selectors-partial',
+        mode: 'item',
+        selector: sel,
+        all: selectors
+      }, '*');
+
+      // Also send FETCHRSS_SELECT for compatibility
       window.parent.postMessage({
         type: 'FETCHRSS_SELECT',
         mode: 'item',
-        selector: selector,
-        relativeSelector: '',
-        tagName: target.tagName.toLowerCase(),
-        matchedCount: document.querySelectorAll(selector).length
+        selector: sel,
+        matchedCount: document.querySelectorAll(sel).length
       }, '*');
 
-      updateBadge('Öğe Seçildi (' + selector + '). Şimdi Başlık veya Link seçebilirsiniz.');
+      window.frssSetMode('title');
     } else {
-      // Sub-item selection relative to current item or container
       var container = currentItemEl;
       if (container && !container.contains(target)) {
-        // Target is in another item or not in selected item; find closest match
-        var allItems = document.querySelectorAll('.fetchrss-selected-item');
+        var allItems = document.querySelectorAll('.frss-selected-item');
         for (var i = 0; i < allItems.length; i++) {
           if (allItems[i].contains(target)) {
             container = allItems[i];
@@ -224,61 +377,72 @@ function getPickerInjection(): string {
         }
       }
 
-      var relSelector = getSelector(target, container);
-      var absSelector = getSelector(target);
+      var relSel = generateCssSelector(target, container);
+      var absSel = generateCssSelector(target);
+      var finalSel = relSel || absSel;
 
-      // Apply highlight class for this mode
-      var clsMap = {
-        title: 'fetchrss-selected-title',
-        link: 'fetchrss-selected-link',
-        description: 'fetchrss-selected-desc',
-        date: 'fetchrss-selected-date',
-        image: 'fetchrss-selected-image'
+      // Update selectors state
+      var keyMap = {
+        title: 'titleSelector',
+        link: 'linkSelector',
+        desc: 'descSelector',
+        description: 'descSelector',
+        image: 'imageSelector',
+        date: 'dateSelector'
       };
-      var cls = clsMap[activeMode] || 'fetchrss-selected-title';
+      var targetKey = keyMap[activeMode] || (activeMode + 'Selector');
+      selectors[targetKey] = finalSel;
+
+      // Highlight class
+      var clsMap = {
+        title: 'frss-selected-title',
+        link: 'frss-selected-link',
+        desc: 'frss-selected-desc',
+        image: 'frss-selected-image',
+        date: 'frss-selected-date'
+      };
+      var cls = clsMap[activeMode] || 'frss-selected-title';
       document.querySelectorAll('.' + cls).forEach(function(el) {
         el.classList.remove(cls);
       });
       target.classList.add(cls);
 
-      var previewText = target.innerText ? target.innerText.trim().slice(0, 100) : '';
-      var linkVal = target.getAttribute('href') || (target.querySelector('a') ? target.querySelector('a').getAttribute('href') : '');
-      var imgVal = target.getAttribute('src') || (target.querySelector('img') ? target.querySelector('img').getAttribute('src') : '');
+      updateStatus(activeMode.toUpperCase() + ' seçildi: ' + finalSel);
+
+      window.parent.postMessage({
+        type: 'frss-selectors-partial',
+        mode: activeMode,
+        selector: finalSel,
+        all: selectors
+      }, '*');
 
       window.parent.postMessage({
         type: 'FETCHRSS_SELECT',
-        mode: activeMode,
-        selector: absSelector,
-        relativeSelector: relSelector || absSelector,
-        tagName: target.tagName.toLowerCase(),
-        textPreview: previewText,
-        linkVal: linkVal,
-        imgVal: imgVal
+        mode: activeMode === 'desc' ? 'description' : activeMode,
+        selector: absSel,
+        relativeSelector: finalSel,
+        textPreview: target.innerText ? target.innerText.trim().slice(0, 80) : ''
       }, '*');
 
-      updateBadge(activeMode.toUpperCase() + ' seçildi: ' + (relSelector || absSelector));
+      // Advance to next mode naturally
+      var nextModes = {
+        title: 'link',
+        link: 'desc',
+        desc: 'image',
+        image: 'date'
+      };
+      if (nextModes[activeMode]) {
+        window.frssSetMode(nextModes[activeMode]);
+      }
     }
   }, true);
 
-  // Listen for messages from parent application
+  // Parent message listener
   window.addEventListener('message', function(event) {
     var data = event.data;
-    if (!data || !data.type) return;
-
-    if (data.type === 'SET_MODE') {
-      activeMode = data.mode || 'item';
-      updateBadge(modeLabels[activeMode] || 'Seçim Modu: ' + activeMode);
-    } else if (data.type === 'HIGHLIGHT_SELECTOR') {
-      try {
-        if (data.selector && data.mode === 'item') {
-          document.querySelectorAll('.fetchrss-selected-item').forEach(function(el) {
-            el.classList.remove('fetchrss-selected-item');
-          });
-          document.querySelectorAll(data.selector).forEach(function(el) {
-            el.classList.add('fetchrss-selected-item');
-          });
-        }
-      } catch (e) {}
+    if (!data) return;
+    if (data.type === 'SET_MODE' && data.mode) {
+      window.frssSetMode(data.mode);
     }
   });
 })();
@@ -287,22 +451,17 @@ function getPickerInjection(): string {
 }
 
 /**
- * Proxies target HTML page for visual CSS selection inside the iframe:
- * 1. Fetches HTML with SSRF check (via fetchPage).
- * 2. Strips all <script>, <iframe>, <object>, <embed> tags and inline script handlers.
- * 3. Injects <base href="..."> to load images, fonts, styles accurately.
- * 4. Injects interactive picker script and styling for element selection.
+ * Strips script tags, meta refresh, inline handlers, adds <base href>,
+ * and injects the interactive visual picker toolbar & script.
  */
-export async function proxyHtmlForPicker(
-  targetUrl: string,
-  render?: boolean,
-  waitSelector?: string
-): Promise<string> {
-  const rawHtml = await fetchPage(targetUrl, render, waitSelector);
-  const $ = cheerio.load(rawHtml);
+export function buildProxiedHtml(originalHtml: string, targetUrl: string): string {
+  const $ = cheerio.load(originalHtml);
 
-  // Remove existing scripts, iframes, and embedding elements for security and isolation
+  // Remove scripts, iframes, and embedding elements for isolation
   $('script, iframe, object, embed, noscript').remove();
+
+  // Remove meta refresh to prevent redirection loops or bypasses
+  $('meta[http-equiv="refresh" i]').remove();
 
   // Strip inline JavaScript attributes (onclick, onload, etc.)
   $('*').each((_, el) => {
@@ -323,7 +482,7 @@ export async function proxyHtmlForPicker(
     $.root().prepend(`<head><base href="${targetUrl}"></head>`);
   }
 
-  // Inject picker script & CSS before closing </body> or at the end of the document
+  // Inject picker toolbar & script
   const injection = getPickerInjection();
   if ($('body').length > 0) {
     $('body').append(injection);
@@ -332,4 +491,16 @@ export async function proxyHtmlForPicker(
   }
 
   return $.html();
+}
+
+/**
+ * Fetches page (via safeGet or Playwright browser) and produces sanitized, proxied HTML.
+ */
+export async function proxyHtmlForPicker(
+  targetUrl: string,
+  render?: boolean,
+  waitSelector?: string
+): Promise<string> {
+  const rawHtml = await fetchPage(targetUrl, render, waitSelector);
+  return buildProxiedHtml(rawHtml, targetUrl);
 }

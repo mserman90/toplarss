@@ -1,26 +1,25 @@
-# Dockerfile for fetchrss-clone
-FROM mcr.microsoft.com/playwright:v1.58.2-jammy
+FROM mcr.microsoft.com/playwright:v1.47.0-jammy
 
 WORKDIR /app
 
-# Install app dependencies
+# Copy dependency specifications
 COPY package*.json ./
-RUN npm ci
 
-# Copy source code and build
+# Install dependencies and build project
+RUN npm ci
 COPY tsconfig.json ./
 COPY src/ ./src/
 COPY public/ ./public/
 RUN npm run build
+RUN npm prune --production
 
-# Environment defaults
+# Runtime environment settings
 ENV NODE_ENV=production
+ENV PW_NO_SANDBOX=1
 ENV PORT=3000
 ENV DB_PATH=/app/data/feeds.db
 ENV PW_MAX_PAGES=2
-ENV PW_NO_SANDBOX=1
 
-# Volume for persistent SQLite database
 VOLUME ["/app/data"]
 
 EXPOSE 3000

@@ -2,14 +2,16 @@ export interface RSSConfig {
   url: string;
   render?: boolean;
   itemSelector: string;
-  titleSelector: string;
-  linkSelector: string;
-  linkAttr?: string;
+  titleSelector?: string;
+  linkSelector?: string;
+  descSelector?: string;
   descriptionSelector?: string;
-  dateSelector?: string;
   imageSelector?: string;
-  imageAttr?: string;
+  dateSelector?: string;
+  baseUrl?: string;
   waitSelector?: string;
+  linkAttr?: string;
+  imageAttr?: string;
 }
 
 export interface RSSItem {
@@ -25,24 +27,31 @@ export interface RSSItem {
 export interface FeedRecord {
   id: string;
   name: string;
-  url: string;
+  config_json: string;
   interval_mins: number;
-  config: string;
   cached_xml: string | null;
-  last_scraped_at: string | null;
+  last_fetched: string | null;
   last_error: string | null;
   created_at: string;
-  updated_at: string;
+  fetch_count: number;
+  // Aliases for compatibility
+  config?: string;
+  url?: string;
+  last_scraped_at?: string | null;
+  updated_at?: string;
 }
 
 export interface FeedCreateInput {
+  id?: string;
   name: string;
   intervalMins?: number;
+  interval_mins?: number;
   config: RSSConfig;
 }
 
 export interface FeedUpdateInput {
   name?: string;
   intervalMins?: number;
+  interval_mins?: number;
   config?: RSSConfig;
 }

@@ -1,6 +1,8 @@
 import * as cheerio from 'cheerio';
 import { RSSConfig, RSSItem } from './types';
 
+export { RSSConfig, RSSItem };
+
 const TURKISH_MONTHS: Record<string, number> = {
   ocak: 0,
   şubat: 1,
@@ -25,7 +27,7 @@ const TURKISH_MONTHS: Record<string, number> = {
 /**
  * Parses diverse date string formats including Turkish month names.
  */
-function parseDateFlexible(dateStr?: string | null): Date | undefined {
+export function parseDateFlexible(dateStr?: string | null): Date | undefined {
   if (!dateStr || !dateStr.trim()) {
     return undefined;
   }
@@ -71,7 +73,7 @@ function parseDateFlexible(dateStr?: string | null): Date | undefined {
 /**
  * Resolves a potentially relative URL against the base URL.
  */
-function resolveUrl(relativeOrAbsolute: string, baseUrl: string): string {
+export function resolveUrl(relativeOrAbsolute: string, baseUrl: string): string {
   try {
     return new URL(relativeOrAbsolute, baseUrl).href;
   } catch {
@@ -81,27 +83,33 @@ function resolveUrl(relativeOrAbsolute: string, baseUrl: string): string {
 
 /**
  * Scrapes RSS items from HTML using selectors configured in RSSConfig.
- * Sub-selectors are evaluated relative to each item matched by itemSelector.
+ * Limits extraction to maximum 100 items. Converts relative URLs to absolute.
  */
-export function scrapeItems(html: string, baseUrl: string, config: RSSConfig): RSSItem[] {
-  if (!html || !config.itemSelector) {
+export function scrape(html: string, cfg: RSSConfig): RSSItem[] {
+  if (!html || !cfg.itemSelector) {
     return [];
   }
 
+  const baseUrl = cfg.baseUrl || cfg.url || 'http://localhost';
   const $ = cheerio.load(html);
-  const matchedElements = $(config.itemSelector);
+  const matchedElements = $(cfg.itemSelector);
   const items: RSSItem[] = [];
 
-  matchedElements.each((_, el) => {
+  matchedElements.each((idx, el) => {
+    // 100 item limit
+    if (items.length >= 100) {
+      return false; // break cheerio loop
+    }
+
     const $item = $(el);
 
     // Extract Title
     let title = '';
-    if (config.titleSelector && config.titleSelector.trim()) {
-      const $title = $item.find(config.titleSelector).first();
+    if (cfg.titleSelector && cfg.titleSelector.trim()) {
+      const $title = $item.find(cfg.titleSelector).first();
       title = $title.text().trim() || $title.attr('title') || '';
     }
-    // Fallback: If title is empty, check if item itself has text
+    // Fallback: If title is empty, check common headings or anchors
     if (!title) {
       const fallbackTitle = $item.find('h1, h2, h3, h4, h5, h6, strong, a').first();
       title = fallbackTitle.text().trim() || fallbackTitle.attr('title') || $item.text().trim();
@@ -109,14 +117,14 @@ export function scrapeItems(html: string, baseUrl: string, config: RSSConfig): R
 
     // Extract Link
     let rawLink = '';
-    const linkAttr = config.linkAttr?.trim() || 'href';
-    if (config.linkSelector && config.linkSelector.trim()) {
-      const $link = $item.find(config.linkSelector).first();
+    const linkAttr = cfg.linkAttr?.trim() || 'href';
+    if (cfg.linkSelector && cfg.linkSelector.trim()) {
+      const $link = $item.find(cfg.linkSelector).first();
       if ($link.length) {
         rawLink = $link.attr(linkAttr) || $link.attr('href') || '';
       }
     }
-    // Fallback: If linkSelector did not find link, find first anchor tag
+    // Fallback: If linkSelector did not find link, find first anchor tag or check item itself
     if (!rawLink) {
       if ($item.is('a') && $item.attr('href')) {
         rawLink = $item.attr('href') || '';
@@ -129,9 +137,10 @@ export function scrapeItems(html: string, baseUrl: string, config: RSSConfig): R
     const resolvedLink = rawLink ? resolveUrl(rawLink, baseUrl) : baseUrl;
 
     // Extract Description
+    const descSel = (cfg.descSelector || cfg.descriptionSelector)?.trim();
     let description: string | undefined;
-    if (config.descriptionSelector && config.descriptionSelector.trim()) {
-      const $desc = $item.find(config.descriptionSelector).first();
+    if (descSel) {
+      const $desc = $item.find(descSel).first();
       if ($desc.length) {
         description = $desc.text().trim() || undefined;
       }
@@ -139,8 +148,8 @@ export function scrapeItems(html: string, baseUrl: string, config: RSSConfig): R
 
     // Extract Date
     let pubDate: Date | undefined;
-    if (config.dateSelector && config.dateSelector.trim()) {
-      const $date = $item.find(config.dateSelector).first();
+    if (cfg.dateSelector && cfg.dateSelector.trim()) {
+      const $date = $item.find(cfg.dateSelector).first();
       if ($date.length) {
         const rawDate =
           $date.attr('datetime') ||
@@ -153,9 +162,9 @@ export function scrapeItems(html: string, baseUrl: string, config: RSSConfig): R
 
     // Extract Image URL
     let imageUrl: string | undefined;
-    const imageAttr = config.imageAttr?.trim() || 'src';
-    if (config.imageSelector && config.imageSelector.trim()) {
-      const $img = $item.find(config.imageSelector).first();
+    const imageAttr = cfg.imageAttr?.trim() || 'src';
+    if (cfg.imageSelector && cfg.imageSelector.trim()) {
+      const $img = $item.find(cfg.imageSelector).first();
       if ($img.length) {
         const rawImg =
           $img.attr(imageAttr) ||
@@ -172,7 +181,7 @@ export function scrapeItems(html: string, baseUrl: string, config: RSSConfig): R
     // Only include items that have at least title or distinct link
     if (title || (rawLink && rawLink !== '#')) {
       items.push({
-        title: title || 'Başlıksız',
+        title: title || 'Başlıksız İçerik',
         link: resolvedLink,
         description,
         pubDate,
@@ -183,4 +192,11 @@ export function scrapeItems(html: string, baseUrl: string, config: RSSConfig): R
   });
 
   return items;
+}
+
+/**
+ * Backward compatibility alias for scrape()
+ */
+export function scrapeItems(html: string, baseUrl: string, config: RSSConfig): RSSItem[] {
+  return scrape(html, { ...config, baseUrl: baseUrl || config.baseUrl || config.url });
 }

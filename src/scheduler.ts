@@ -1,8 +1,8 @@
 import cron, { ScheduledTask } from 'node-cron';
-import { getFeedsDueForScrape, getFeedById, updateFeedXml, updateFeedError } from './db';
+import { getDueFeeds, getFeed, updateFeedCache, updateFeedError } from './db';
 import { fetchPage } from './fetcher';
-import { scrapeItems } from './scraper';
-import { generateRss } from './rss';
+import { scrape } from './scraper';
+import { generateRssXml } from './rss';
 import { FeedRecord, RSSConfig } from './types';
 
 let scheduledTask: ScheduledTask | null = null;
@@ -18,7 +18,7 @@ export async function refreshFeed(
   let feed: FeedRecord | undefined;
 
   if (typeof feedOrId === 'string') {
-    feed = getFeedById(feedOrId);
+    feed = getFeed(feedOrId);
   } else {
     feed = feedOrId;
   }
@@ -32,37 +32,51 @@ export async function refreshFeed(
   try {
     let config: RSSConfig;
     try {
-      config = JSON.parse(feed.config);
+      config = JSON.parse(feed.config_json);
     } catch {
       throw new Error('Feed yapılandırma verisi (JSON) bozuk.');
     }
 
+    const targetUrl = config.url || feed.url;
+    if (!targetUrl) {
+      throw new Error('Hedef sayfa URL adresi eksik.');
+    }
+
     // 1. Fetch HTML (Axios or Playwright based on config.render)
-    const html = await fetchPage(feed.url, config.render, config.waitSelector);
+    const html = await fetchPage(targetUrl, config.render, config.waitSelector);
 
     // 2. Scrape items
-    const items = scrapeItems(html, feed.url, config);
+    const items = scrape(html, config);
     if (!items || items.length === 0) {
       throw new Error('Belirtilen seçicilerle sayfadan hiçbir içerik çıkarılamadı.');
     }
 
     // 3. Generate RSS 2.0 XML
-    const xml = generateRss(feed.name, feed.url, items, publicUrl, feed.id);
+    const xml = generateRssXml(
+      {
+        name: feed.name,
+        url: targetUrl,
+        feedId: feed.id,
+        publicUrl,
+      },
+      items
+    );
 
-    // 4. Update database with fresh XML
-    updateFeedXml(feed.id, xml, timestamp);
+    // 4. Update database cache
+    updateFeedCache(feed.id, xml);
 
     return { success: true, itemCount: items.length };
   } catch (err: any) {
     const errorMsg = err?.message || 'Bilinmeyen bir hata oluştu.';
-    // Preserve existing cached XML, only update last_error
+    // Preserve existing cached XML, only record last_error
     updateFeedError(feed.id, errorMsg, timestamp);
     return { success: false, error: errorMsg };
   }
 }
 
 /**
- * Starts the minute-by-minute scheduler that checks and refreshes expired feeds.
+ * Starts the minute-by-minute scheduler that checks and refreshes due feeds.
+ * Schedule: '* * * * *'
  */
 export function startScheduler(publicUrl?: string): void {
   if (scheduledTask) {
@@ -72,9 +86,8 @@ export function startScheduler(publicUrl?: string): void {
   // Runs every minute
   scheduledTask = cron.schedule('* * * * *', async () => {
     try {
-      const dueFeeds = getFeedsDueForScrape();
+      const dueFeeds = getDueFeeds();
       for (const feed of dueFeeds) {
-        // Run refresh sequentially or with light spacing to prevent overload
         await refreshFeed(feed, publicUrl).catch((err) => {
           console.error(`Feed [${feed.id}] yenilenirken beklenmeyen hata:`, err);
         });
@@ -86,7 +99,7 @@ export function startScheduler(publicUrl?: string): void {
 }
 
 /**
- * Stops the scheduler.
+ * Stops the scheduler cleanly.
  */
 export function stopScheduler(): void {
   if (scheduledTask) {

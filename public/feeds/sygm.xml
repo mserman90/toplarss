@@ -4,16 +4,24 @@
         <title>SYGM Haber Arşivi</title>
         <link>https://www.tarimorman.gov.tr/SYGM/HaberArsivi</link>
         <description>SYGM Haber Arşivi (https://www.tarimorman.gov.tr/SYGM/HaberArsivi)</description>
-        <lastBuildDate>Tue, 29 Sep 2026 21:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 30 Sep 2026 21:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
-        <generator>toplarss (Web -&gt; RSS)</generator>
+        <generator>fetchrss-clone (Web -&gt; RSS 2.0)</generator>
         <language>tr</language>
         <image>
             <title>SYGM Haber Arşivi</title>
-            <url>https://www.tarimorman.gov.tr/SYGM/FotografGalerisi/AVON%20PROJE%2030.09.2026/Resim1.png?RenditionId=3</url>
+            <url>https://www.tarimorman.gov.tr/SYGM/FotografGalerisi/SU%20YILI%202026%20SON/su%20y%c4%b1l%c4%b1%20mesaj%c4%b1%20vitrin%20(1).jpg?RenditionId=3</url>
             <link>https://www.tarimorman.gov.tr/SYGM/HaberArsivi</link>
         </image>
         <copyright>Tüm hakları kaynak yayına aittir</copyright>
+        <item>
+            <title><![CDATA[SAYIN BAKANIMIZ İBRAHİM YUMAKLI: “KAYNAKLARIMIZI KORUMAYA, YÖNETMEYE VE YARINLARA TAŞIMAYA DEVAM EDECEĞİZ”]]></title>
+            <link>https://www.tarimorman.gov.tr/SYGM/Haber/1407/Sayin-Bakanimiz-Ibrahim-Yumakli-Kaynaklarimizi-Korumaya-Yonetmeye-Ve-Yarinlara-Tasimaya-Devam-Edecegiz</link>
+            <guid isPermaLink="false">https://www.tarimorman.gov.tr/SYGM/Haber/1407/Sayin-Bakanimiz-Ibrahim-Yumakli-Kaynaklarimizi-Korumaya-Yonetmeye-Ve-Yarinlara-Tasimaya-Devam-Edecegiz</guid>
+            <pubDate>Wed, 30 Sep 2026 21:00:00 GMT</pubDate>
+            <description><![CDATA[SAYIN BAKANIMIZ İBRAHİM YUMAKLI: “KAYNAKLARIMIZI KORUMAYA, YÖNETMEYE VE YARINLARA TAŞIMAYA DEVAM EDECEĞİZ”]]></description>
+            <enclosure url="https://www.tarimorman.gov.tr/SYGM/FotografGalerisi/SU%20YILI%202026%20SON/su%20y%c4%b1l%c4%b1%20mesaj%c4%b1%20vitrin%20(1).jpg?RenditionId=3" length="0" type="image/jpg"/>
+        </item>
         <item>
             <title><![CDATA[İÇME SUYU ARITMA TESİSLERİ PROJE ONAY GENELGESİ REVİZE EDİLDİ]]></title>
             <link>https://www.tarimorman.gov.tr/SYGM/Haber/1405/Icme-Suyu-Aritma-Tesisleri-Proje-Onay-Genelgesi-Revize-Edildi</link>
@@ -165,14 +173,6 @@
             <pubDate>Thu, 21 May 2026 21:00:00 GMT</pubDate>
             <description><![CDATA[ARITILMIŞ KENTSEL ATIK SULARIN YENİDEN KULLANIMI PROJESİ KAPSAMINDA EYLEM KOORDİNASYON BİRİMİ 1. TOPLANTISI GERÇEKLEŞTİRİLDİ]]></description>
             <enclosure url="https://www.tarimorman.gov.tr/SYGM/FotografGalerisi/22.05.2026/son.jpg?RenditionId=3" length="0" type="image/jpg"/>
-        </item>
-        <item>
-            <title><![CDATA[KURAKÇIL PEYZAJ İLE UYUMLU BİTKİLERİN ÜRETİMİ KONUSUNDA TEKNİK DEĞERLENDİRME TOPLANTISI GERÇEKLEŞTİRİLDİ]]></title>
-            <link>https://www.tarimorman.gov.tr/SYGM/Haber/1382/Kurakcil-Peyzaj-Ile-Uyumlu-Bitkilerin-Uretimi-Konusunda-Teknik-Degerlendirme-Toplantisi-Gerceklestirildi</link>
-            <guid isPermaLink="false">https://www.tarimorman.gov.tr/SYGM/Haber/1382/Kurakcil-Peyzaj-Ile-Uyumlu-Bitkilerin-Uretimi-Konusunda-Teknik-Degerlendirme-Toplantisi-Gerceklestirildi</guid>
-            <pubDate>Wed, 20 May 2026 21:00:00 GMT</pubDate>
-            <description><![CDATA[KURAKÇIL PEYZAJ İLE UYUMLU BİTKİLERİN ÜRETİMİ KONUSUNDA TEKNİK DEĞERLENDİRME TOPLANTISI GERÇEKLEŞTİRİLDİ]]></description>
-            <enclosure url="https://www.tarimorman.gov.tr/SYGM/FotografGalerisi/21.05.2026/Ekran%20g%c3%b6r%c3%bcnt%c3%bcs%c3%bc%202026-05-22%20115316.jpg?RenditionId=3" length="0" type="image/jpg"/>
         </item>
     </channel>
 </rss>

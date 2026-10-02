@@ -73,6 +73,18 @@ async function runCliScrape() {
       console.log(`    -> RSS kaydedildi: ${targetFilePath}`);
     } catch (err: any) {
       console.error(`    [-] Hata oluştu: ${err.message}`);
+      const targetFilePath = path.join(outputDir, `${feed.id}.xml`);
+      if (fs.existsSync(targetFilePath)) {
+        console.log(`    [+] Mevcut önbellekteki RSS dosyası korundu: ${targetFilePath}`);
+        manifest.push({
+          id: feed.id,
+          name: feed.name,
+          url: feed.url,
+          xmlUrl: `${publicBaseUrl}/feeds/${feed.id}.xml`,
+          lastUpdated: new Date().toISOString(),
+          itemCount: 20,
+        });
+      }
     }
   }
 

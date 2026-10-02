@@ -8,8 +8,25 @@ const ALLOW_INTRANET_DOMAINS = (process.env.ALLOW_INTRANET_DOMAINS || '.gov.tr,t
   .filter(Boolean);
 
 /**
+ * Checks whether a hostname matches blocked internal or local domain suffixes.
+ */
+export function isBlockedHostname(hostname: string): boolean {
+  if (!hostname) return true;
+  const h = hostname.toLowerCase();
+  return (
+    h === 'localhost' ||
+    h.endsWith('.localhost') ||
+    h.endsWith('.local') ||
+    h.endsWith('.internal') ||
+    h.endsWith('.lan') ||
+    h.endsWith('.home') ||
+    h.endsWith('.corp')
+  );
+}
+
+/**
  * Checks whether an IP address is loopback (127.0.0.0/8, ::1) or cloud metadata (169.254.0.0/16).
- * These are NEVER allowed, even for whitelisted institutional domains.
+ * These are NEVER allowed under any circumstances.
  */
 export function isCriticalReservedIp(ip: string): boolean {
   if (ip.startsWith('::ffff:')) {
@@ -42,8 +59,11 @@ export function isCriticalReservedIp(ip: string): boolean {
 
 /**
  * Checks whether an IP address is private, loopback, link-local, or reserved.
+ * Blocks: 10., 192.168., 172.16-31, 127., 0.0.0.0, 169.254., fc/fd, fe80, ::1
  */
 export function isPrivateIp(ip: string): boolean {
+  if (!ip) return true;
+
   // Handle IPv4-mapped IPv6 (e.g. ::ffff:192.168.1.1)
   if (ip.startsWith('::ffff:')) {
     const ipv4 = ip.substring(7);
@@ -69,7 +89,7 @@ export function isPrivateIp(ip: string): boolean {
     if (a === 127) return true;
     // 169.254.0.0/16 (Link-local / Cloud metadata 169.254.169.254)
     if (a === 169 && b === 254) return true;
-    // 172.16.0.0/12 (Private)
+    // 172.16.0.0/12 (Private: 172.16 - 172.31)
     if (a === 172 && b >= 16 && b <= 31) return true;
     // 192.168.0.0/16 (Private)
     if (a === 192 && b === 168) return true;
@@ -113,7 +133,7 @@ export function isPrivateIp(ip: string): boolean {
 
 /**
  * Checks whether a hostname belongs to an allowed institutional domain
- * (e.g. *.gov.tr or tarimorman.gov.tr that uses split-horizon DNS inside corporate networks).
+ * (e.g. *.gov.tr that uses split-horizon DNS inside corporate/governmental networks).
  */
 export function isAllowedInstitutionalDomain(hostname: string): boolean {
   const lower = hostname.toLowerCase();
@@ -127,7 +147,7 @@ export function isAllowedInstitutionalDomain(hostname: string): boolean {
 
 /**
  * Asserts that a URL is public or a trusted institutional split-horizon domain.
- * Throws Turkish descriptive error messages if the URL is invalid or unsafe.
+ * Validates protocol, hostname, and resolves DNS to verify IP addresses against private ranges.
  */
 export async function assertPublicUrl(urlStr: string): Promise<{ parsedUrl: URL; ip: string }> {
   let parsedUrl: URL;
@@ -148,15 +168,7 @@ export async function assertPublicUrl(urlStr: string): Promise<{ parsedUrl: URL;
   }
 
   // Block obvious localhost and local hostnames
-  if (
-    hostname === 'localhost' ||
-    hostname.endsWith('.localhost') ||
-    hostname.endsWith('.local') ||
-    hostname.endsWith('.internal') ||
-    hostname.endsWith('.lan') ||
-    hostname.endsWith('.home') ||
-    hostname.endsWith('.corp')
-  ) {
+  if (isBlockedHostname(hostname)) {
     throw new Error(`Güvenlik engeli: '${hostname}' yerel bir alan adıdır ve erişilemez.`);
   }
 
@@ -183,8 +195,6 @@ export async function assertPublicUrl(urlStr: string): Promise<{ parsedUrl: URL;
   }
 
   for (const record of addresses) {
-    // If the domain is an authorized public domain (like .gov.tr), allow split-horizon intranet IPs,
-    // but ALWAYS strictly block loopback (127.0.0.1) and cloud metadata (169.254.169.254).
     if (isWhitelisted) {
       if (isCriticalReservedIp(record.address)) {
         throw new Error(`Güvenlik engeli: '${hostname}' döngüsel (loopback) veya bulut metadata IP'sine (${record.address}) işaret ediyor.`);
@@ -223,7 +233,7 @@ export async function safeGet(
         responseType: 'text',
         headers: {
           'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 toplarss/1.0',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 fetchrss-clone/1.0',
           'Accept':
             'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
           'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',

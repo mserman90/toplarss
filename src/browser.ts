@@ -2,7 +2,7 @@ import { chromium, Browser } from 'playwright';
 import { assertPublicUrl } from './security';
 
 const PW_MAX_PAGES = parseInt(process.env.PW_MAX_PAGES || '2', 10);
-const PW_NO_SANDBOX = process.env.PW_NO_SANDBOX === '1';
+const PW_NO_SANDBOX = process.env.PW_NO_SANDBOX === '1' || process.env.PW_NO_SANDBOX === 'true';
 
 class ConcurrencyLimiter {
   private activeCount = 0;
@@ -54,7 +54,7 @@ let sharedBrowser: Browser | null = null;
 let browserLaunchingPromise: Promise<Browser> | null = null;
 
 /**
- * Returns or launches the single shared Playwright browser instance.
+ * Returns or launches the single shared Playwright Chromium browser instance.
  */
 export async function getSharedBrowser(): Promise<Browser> {
   if (sharedBrowser && sharedBrowser.isConnected()) {
@@ -94,12 +94,34 @@ export async function getSharedBrowser(): Promise<Browser> {
   return browserLaunchingPromise;
 }
 
+export interface RenderOptions {
+  waitSelector?: string;
+  timeoutMs?: number;
+}
+
 /**
  * Renders a web page with JavaScript execution using Playwright.
+ * Sequence: domcontentloaded + 1500ms + networkidle + waitSelector
  * Enforces SSRF assertion on the main URL and every outbound network request.
  * Creates and closes a fresh browser context per request.
  */
-export async function renderPage(url: string, waitSelector?: string): Promise<string> {
+export async function renderPage(
+  url: string,
+  optionsOrWaitSelector?: RenderOptions | string
+): Promise<string> {
+  // Support both object options and simple waitSelector string
+  let waitSelector: string | undefined;
+  let timeoutMs = 30000;
+
+  if (typeof optionsOrWaitSelector === 'string') {
+    waitSelector = optionsOrWaitSelector;
+  } else if (optionsOrWaitSelector) {
+    waitSelector = optionsOrWaitSelector.waitSelector;
+    if (optionsOrWaitSelector.timeoutMs) {
+      timeoutMs = optionsOrWaitSelector.timeoutMs;
+    }
+  }
+
   // SSRF validation for the target page URL
   await assertPublicUrl(url);
 
@@ -125,7 +147,7 @@ export async function renderPage(url: string, waitSelector?: string): Promise<st
   try {
     const page = await context.newPage();
 
-    // Inspect and filter every single outbound network request
+    // Inspect and filter every single outbound network request for SSRF
     await page.route('**/*', async (route) => {
       const reqUrl = route.request().url();
       if (reqUrl.startsWith('data:') || reqUrl.startsWith('blob:')) {
@@ -142,21 +164,30 @@ export async function renderPage(url: string, waitSelector?: string): Promise<st
       }
     });
 
+    // 1. domcontentloaded
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
     } catch (err: any) {
       throw new Error(`Sayfa yüklenirken Playwright hatası oluştu: ${err.message || err}`);
     }
 
+    // 2. 1500ms grace period for hydration & scripts
+    await page.waitForTimeout(1500);
+
+    // 3. networkidle (graceful fallback if timed out)
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
+    } catch {
+      // Proceed if networkidle times out
+    }
+
+    // 4. waitSelector if specified
     if (waitSelector && waitSelector.trim()) {
       try {
         await page.waitForSelector(waitSelector.trim(), { timeout: 10000 });
       } catch {
         // If waitSelector is not found within timeout, proceed with current content
       }
-    } else {
-      // Short grace period for client-side JavaScript rendering to settle
-      await page.waitForTimeout(1000);
     }
 
     const html = await page.content();
