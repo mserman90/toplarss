@@ -1,5 +1,13 @@
 [
   {
+    "id": "tarimorman-haberler",
+    "name": "Tarım ve Orman Bakanlığı Haber Arşivi",
+    "url": "https://www.tarimorman.gov.tr/HaberArsivi",
+    "xmlUrl": "https://mserman90.github.io/toplarss/feeds/tarimorman-haberler.xml",
+    "lastUpdated": "2026-10-02T13:02:27.607Z",
+    "itemCount": 20
+  },
+  {
     "id": "sygm",
     "name": "SYGM Haber Arşivi",
     "url": "https://www.tarimorman.gov.tr/SYGM/HaberArsivi",
